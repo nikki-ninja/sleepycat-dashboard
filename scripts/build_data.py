@@ -14,6 +14,8 @@ Run locally:  pip install snowflake-connector-python && python scripts/build_dat
 """
 import os, json, datetime, sys
 import snowflake.connector
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import mom   # month-on-month tabs
 
 WINDOW_DAYS   = 75    # daily funnel table depth
 UTM_WEEKS     = 8     # weekly per-source table depth
@@ -46,6 +48,12 @@ ORD_MED = "UPPER(COALESCE(NULLIF(TRIM(gd.gm),''), NULLIF(TRIM(c.CHECKOUT_UTM_MED
 GD_CTE  = """gd AS (
   SELECT ID, MAX(GOKWIK_UTM_SOURCE) gs, MAX(GOKWIK_UTM_MEDIUM) gm
   FROM SLEEPYCAT_DB.MAPLEMONK.SLEEPYCAT_DB_GOKWIK_SOURCE GROUP BY 1)"""   # dupe IDs: must pre-aggregate
+
+def utm_dedup(where):
+    """SESSIONS_BY_UTM rows, one per DAY+SOURCE+MEDIUM+CAMPAIGN (latest extract). The dedupe must sit in a
+    subquery: QUALIFY runs after GROUP BY, so putting it next to a GROUP BY is invalid SQL."""
+    return f"""(SELECT * FROM RAW_SHOPIFY_SLEEPYCAT.SESSIONS_BY_UTM WHERE {where}
+      QUALIFY ROW_NUMBER() OVER (PARTITION BY DAY, UTM_SOURCE, UTM_MEDIUM, UTM_CAMPAIGN ORDER BY EXTRACTED_AT DESC) = 1)"""
 
 def q(cur, sql):
     cur.execute(sql)
@@ -100,11 +108,7 @@ def main():
     # ---------- 2. paid / organic / owned, day-wise ----------
     sess_b = q(cur, f"""
       SELECT TO_VARCHAR(DAY), {bucket_case('UTM_SOURCE','UTM_MEDIUM')}, SUM(SESSIONS)
-      FROM RAW_SHOPIFY_SLEEPYCAT.SESSIONS_BY_UTM
-      WHERE DAY >= DATEADD(day, -{WINDOW_DAYS}, CURRENT_DATE)
-        AND UPPER(UTM_MEDIUM) <> 'CHECKOUT'
-      QUALIFY ROW_NUMBER() OVER (PARTITION BY DAY, UTM_SOURCE, UTM_MEDIUM, UTM_CAMPAIGN
-                                 ORDER BY EXTRACTED_AT DESC) = 1
+      FROM {utm_dedup(f"DAY >= DATEADD(day, -{WINDOW_DAYS}, CURRENT_DATE) AND UPPER(UTM_MEDIUM) <> 'CHECKOUT'")}
       GROUP BY 1,2""")
     ord_b = q(cur, f"""
       WITH {GD_CTE}
@@ -130,11 +134,7 @@ def main():
       SELECT TO_VARCHAR(DATE_TRUNC('WEEK', DAY)::DATE),
              UPPER(COALESCE(NULLIF(TRIM(UTM_SOURCE),''),'UNATTRIB'))||'/'||UPPER(COALESCE(TRIM(UTM_MEDIUM),'')),
              SUM(SESSIONS)
-      FROM RAW_SHOPIFY_SLEEPYCAT.SESSIONS_BY_UTM
-      WHERE DAY >= DATEADD(week, -{UTM_WEEKS}, DATE_TRUNC('WEEK', CURRENT_DATE))
-        AND UPPER(UTM_MEDIUM) <> 'CHECKOUT'
-      QUALIFY ROW_NUMBER() OVER (PARTITION BY DAY, UTM_SOURCE, UTM_MEDIUM, UTM_CAMPAIGN
-                                 ORDER BY EXTRACTED_AT DESC) = 1
+      FROM {utm_dedup(f"DAY >= DATEADD(week, -{UTM_WEEKS}, DATE_TRUNC('WEEK', CURRENT_DATE)) AND UPPER(UTM_MEDIUM) <> 'CHECKOUT'")}
       GROUP BY 1,2""")
     ord_w = q(cur, f"""
       WITH {GD_CTE}
@@ -176,11 +176,8 @@ def main():
 
     # ---------- 4. Facebook TOFU sessions, and GA4 weekly checkouts ----------
     TOFU = {d: int(s) for d, s in q(cur, f"""
-      SELECT TO_VARCHAR(DAY), SUM(SESSIONS) FROM RAW_SHOPIFY_SLEEPYCAT.SESSIONS_BY_UTM
-      WHERE UPPER(UTM_SOURCE)='FACEBOOK' AND UPPER(UTM_MEDIUM)='TOFU'
-        AND DAY >= DATEADD(day, -{WINDOW_DAYS+30}, CURRENT_DATE)
-      QUALIFY ROW_NUMBER() OVER (PARTITION BY DAY, UTM_SOURCE, UTM_MEDIUM, UTM_CAMPAIGN
-                                 ORDER BY EXTRACTED_AT DESC) = 1
+      SELECT TO_VARCHAR(DAY), SUM(SESSIONS)
+      FROM {utm_dedup(f"UPPER(UTM_SOURCE)='FACEBOOK' AND UPPER(UTM_MEDIUM)='TOFU' AND DAY >= DATEADD(day, -{WINDOW_DAYS+30}, CURRENT_DATE)")}
       GROUP BY 1""")}
     CK = {d: int(c) for d, c in q(cur, f"""
       SELECT TO_VARCHAR(DATE_TRUNC('WEEK', TO_DATE(DATE,'YYYYMMDD'))::DATE), SUM(CHECKOUTS)
@@ -188,13 +185,77 @@ def main():
       WHERE TO_DATE(DATE,'YYYYMMDD') >= DATEADD(week, -{UTM_WEEKS}, DATE_TRUNC('WEEK', CURRENT_DATE))
       GROUP BY 1""")}
 
+    # ---------- 5. source-wise CVR, last 21 days (feeds the table under the daily funnel) ----------
+    src_days = 21
+    ss = q(cur, f"""
+      SELECT TO_VARCHAR(DAY),
+             CASE WHEN k IN ({TRACKED_SQL}) THEN k WHEN k='UNATTRIB/' THEN 'UNATTRIB/' ELSE '_other' END,
+             SUM(SESSIONS)
+      FROM (SELECT DAY, SESSIONS,
+                   UPPER(COALESCE(NULLIF(TRIM(UTM_SOURCE),''),'UNATTRIB'))||'/'||UPPER(COALESCE(TRIM(UTM_MEDIUM),'')) k
+            FROM RAW_SHOPIFY_SLEEPYCAT.SESSIONS_BY_UTM
+            WHERE DAY >= DATEADD(day, -{src_days}, CURRENT_DATE)
+              AND UPPER(UTM_MEDIUM) <> 'CHECKOUT'
+            QUALIFY ROW_NUMBER() OVER (PARTITION BY DAY, UTM_SOURCE, UTM_MEDIUM, UTM_CAMPAIGN
+                                       ORDER BY EXTRACTED_AT DESC) = 1)
+      GROUP BY 1,2""")
+    so = q(cur, f"""
+      WITH {GD_CTE}
+      SELECT TO_VARCHAR(DATE(CONVERT_TIMEZONE('Asia/Kolkata', o.CREATED_AT))),
+             CASE WHEN {ORD_SRC}||'/'||{ORD_MED} IN ({TRACKED_SQL})
+                  THEN {ORD_SRC}||'/'||{ORD_MED} ELSE 'OTHER_POOL' END,
+             COUNT(*)
+      FROM SLEEPYCAT_DB.MAPLEMONK.SLEEPYCAT_DB_ORDERS o
+      LEFT JOIN SLEEPYCAT_DB.MAPLEMONK.SLEEPYCAT_DB_CHECKOUT_SOURCE c ON c.ID = o.ID
+      LEFT JOIN gd ON gd.ID = o.ID
+      WHERE o.SOURCE_NAME IN {D2C} AND o.CANCELLED_AT IS NULL
+        AND DATE(CONVERT_TIMEZONE('Asia/Kolkata', o.CREATED_AT)) >= DATEADD(day, -{src_days}, CURRENT_DATE)
+      GROUP BY 1,2""")
+    dss, dso = {}, {}
+    for d, k, s in ss: dss.setdefault(d, {})[k] = int(s)
+    for d, k, n in so: dso.setdefault(d, {})[k] = int(n)
+    sdays = sorted(dss)[-src_days:]
+    SRC = {"days": sdays, "rows": {k: [[dss[d].get(k, 0), dso.get(d, {}).get(k, 0)] for d in sdays] for k in TRACKED}}
+    # untagged sessions pair with every order outside the tracked list — the same blend as the weekly table
+    SRC["rows"]["UNTAGGED (organic, direct & untracked)"] = \
+        [[dss[d].get('UNATTRIB/', 0), dso.get(d, {}).get('OTHER_POOL', 0)] for d in sdays]
+
+
+    # ---------- 6. month-on-month blocks for every non-daily tab ----------
+    # Window: last 4 calendar months, current one to date. Logic + SQL live in scripts/mom.py.
+    through = datetime.date.fromisoformat(max(r["date"] for r in DAILY))
+    M, _, _, prm = mom.window(through)
+    mrows = {name: q(cur, mom.sql(name, prm)) for name in mom.SQL}
+    for name in ('ord_utm', 'mask', 'geo2', 'prod', 'meta'):
+        if not mrows[name]: sys.exit(f"month-on-month query '{name}' returned nothing — refusing to write")
+    sess_days = {}
+    for d, se, at, bo in q(cur, f"""
+      SELECT TO_VARCHAR(DAY), SESSIONS, SESSIONS_WITH_CART_ADDITIONS, TRY_TO_DOUBLE(TO_VARCHAR(BOUNCE_RATE))
+      FROM RAW_SHOPIFY_SLEEPYCAT.SESSIONS_DAILY
+      WHERE DAY BETWEEN '{prm['S']}' AND '{prm['T']}'"""):
+        bo = None if bo is None else (bo / 100 if bo > 1 else bo)
+        sess_days[d] = (int(se), int(at), bo)
+    utm_month = {}
+    for m, k, se, at in q(cur, f"""
+      SELECT TO_CHAR(DAY, 'YYYY-MM'),
+             UPPER(COALESCE(NULLIF(TRIM(UTM_SOURCE),''),'UNATTRIB'))||'/'||UPPER(COALESCE(TRIM(UTM_MEDIUM),'')),
+             SUM(SESSIONS), SUM(SESSIONS_WITH_CART_ADDITIONS)
+      FROM {utm_dedup(f"DAY BETWEEN '{prm['S']}' AND '{prm['T']}'")}
+      GROUP BY 1,2"""):
+        e = utm_month.setdefault(m, {'__ALL__': [0, 0]})
+        e['__ALL__'][0] += int(se); e['__ALL__'][1] += int(at or 0)
+        if not k.endswith('/CHECKOUT'): e[k] = [int(se), int(at or 0)]
+    MOM = mom.build(mrows, sess_days, utm_month, through, datetime.date.today().isoformat())
+    # the order fact table must reconcile with the orders table month by month (asserted inside build too)
+    assert sum(MOM['funnel']['table'][5]['v']) > 0
+
     cur.close(); cn.close()
 
     today = datetime.date.today().isoformat()
     payload = {"generated_on": today, "as_of": today,
                "as_of_data": max(r["date"] for r in DAILY),
                "DAILY": DAILY, "UTM": {"daily": UTM_daily, "weekly": UTM_weekly, "minSess": MIN_SESS},
-               "TOFU": TOFU, "CK_WEEKLY": CK}
+               "TOFU": TOFU, "CK_WEEKLY": CK, "SRC_CVR": SRC, "MOM": MOM}
 
     blob = json.dumps(payload, separators=(',', ':'))
     with open('data/data.js', 'w') as f:
