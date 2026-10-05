@@ -223,7 +223,7 @@ def main():
 
     # ---------- 6. month-on-month blocks for every non-daily tab ----------
     # Window: last 4 calendar months, current one to date. Logic + SQL live in scripts/mom.py.
-    through = datetime.date.fromisoformat(max(r["date"] for r in DAILY))
+    through = mom.effective_through(datetime.date.fromisoformat(max(r["date"] for r in DAILY)))
     M, _, _, prm = mom.window(through)
     mrows = {name: q(cur, mom.sql(name, prm)) for name in mom.SQL}
     for name in ('ord_utm', 'mask', 'geo2', 'prod', 'meta'):

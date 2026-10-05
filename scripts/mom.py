@@ -23,6 +23,14 @@ SQL = {
  "geo2": "with li as (select ORDER_ID, date(ORDER_TIMESTAMP) d, upper(trim(STATE)) st, upper(trim(CITY)) ct, TOTAL_SALES s,\n iff(PRODUCT_CATEGORY in ('MATTRESS','MATTRESSES'),1,0) mat, iff(PRODUCT_CATEGORY='PILLOW',1,0) pil, iff(PRODUCT_SUB_CATEGORY='MATTRESS PROTECTOR',1,0) prot, iff(PRODUCT_CATEGORY not in ('MATTRESS','MATTRESSES'),1,0) acc\n from SLEEPYCAT_DB.MAPLEMONK.SLEEPYCAT_DB_SHOPIFY_FACT_ITEMS where APP_ID in (256945782785,580111,326345687041) and ORDER_STATUS<>'CANCELLED' and date(ORDER_TIMESTAMP) between '{S}' and '{T}'),\no as (select ORDER_ID, to_char(max(d),'YYYY-MM') m, max(d) d, max(st) st, max(ct) ct, sum(s) s, max(mat) mat, max(pil) pil, max(prot) prot, max(acc) acc from li group by 1),\nref as (select ct, count(*) c from o where d between '{S}' and '{R}' group by 1),\nt as (select o.*, case when o.ct in ('BENGALURU','BANGALORE','MUMBAI','PUNE','HYDERABAD','CHENNAI','DELHI','NEW DELHI','GURGAON','GURUGRAM','KOLKATA','NOIDA') then 'Metro' when coalesce(ref.c,0)>=50 then 'Tier-1' when ref.c>=20 then 'Tier-2' when ref.c>=8 then 'Tier-3' else 'RoI' end tier from o left join ref on ref.ct=o.ct)\nselect m, tier, st, mat, pil, prot, acc, count(*) n, round(sum(s)) r, count(distinct ct) ncity from t group by 1,2,3,4,5,6,7"
 }
 
+MIN_DAYS = 7   # a month with fewer days than this is too thin to compare; the tabs stay on the last closed month
+
+def effective_through(through):
+    """Early in a month (day < MIN_DAYS) the month-on-month tabs stop at the previous month-end."""
+    if through.day < MIN_DAYS:
+        return through.replace(day=1) - datetime.timedelta(days=1)
+    return through
+
 def window(through):
     """through: date of the last complete day. Returns months, labels, day counts and SQL params."""
     y, m = through.year, through.month
@@ -32,7 +40,8 @@ def window(through):
         while mm <= 0: mm += 12; yy -= 1
         months.append((yy, mm))
     M = [f'{yy}-{mm:02d}' for yy, mm in months]
-    LAB = [calendar.month_abbr[mm] for _, mm in months]; LAB[-1] += '*'
+    LAB = [calendar.month_abbr[mm] for _, mm in months]
+    if through.day != calendar.monthrange(y, m)[1]: LAB[-1] += '*'
     DAYS = [calendar.monthrange(yy, mm)[1] for yy, mm in months]; DAYS[-1] = through.day
     start = datetime.date(months[0][0], months[0][1], 1)
     ref_end = start + datetime.timedelta(days=89)
@@ -56,7 +65,7 @@ def build(rows, sess_days, utm_month, through, refreshed):
     mi = {m: i for i, m in enumerate(M)}
     z = lambda: [0, 0, 0, 0]
     def fmtd(d): return datetime.date.fromisoformat(d).strftime('%b %-d')
-    OUT = {'meta': {'months': M, 'labels': LAB, 'days': DAYS, 'through': THROUGH, 'refreshed': refreshed,
+    OUT = {'meta': {'months': M, 'labels': LAB, 'days': DAYS, 'through': THROUGH, 'refreshed': refreshed, 'complete': not LAB[-1].endswith('*'),
                     'window': f"{fmtd(START)} – {fmtd(THROUGH)}, {through.year}", 'tierRef': f"{fmtd(START)} – {fmtd(p['R'])}"}}
     def row(k, v, fmt, d='vol', g=1, **kw):
         r = {'k': k, 'v': [None if x is None else (round(x, 4) if isinstance(x, float) else x) for x in v], 'f': fmt, 'd': d, 'g': g}
