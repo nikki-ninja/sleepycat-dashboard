@@ -573,33 +573,25 @@
 
   <!-- CART RECOVERY -->
   <div class="content" id="page-behaviour">
-    <div class="data-stamp" data-snap="Jul 13 – Aug 10, 2026" data-why="the cart-recovery source (abandon_purchase_behaviour) is not in Snowflake, so this tab cannot refresh until a new export is loaded"></div>
-    <div class="explain-box">
-      <b>What "recovery" means on this page:</b> Someone adds items to cart and reaches checkout on Shopify (a "checkout started" record is created), but doesn't complete payment — that's an <b>abandoned cart</b>. If they come back later (any channel — email, WhatsApp nudge, or just remembering) and complete the purchase, that's a <b>recovered</b> cart. Every chart below is measuring: out of everyone who abandoned, who came back, and how fast.
-    </div>
+    <div class="data-stamp"></div>
+    <div class="explain-box"><b>What "recovery" means on this page (rebuilt Oct 5):</b> a shopper reaches the Razorpay payment step and does not pay — an <b>abandoned checkout</b>. If the same phone number places a website order (any checkout, incl. GoKwik) within 14 days, it is <b>recovered</b>. The old page used a one-off cart export that is not in Snowflake; this version refreshes every build. It cannot see carts abandoned before payment, or inside GoKwik's own checkout.</div>
     <div class="analyst-note">
       <div class="analyst-head"><div class="analyst-head-left"><div class="analyst-avatar">A</div><div class="analyst-title">What changed → Where → Why → Impact → Fix</div></div><span class="roadmap-ref">Roadmap: P0 "Extend recovery flow"</span></div>
-      <div class="analyst-body">
-        86% of all recoveries happen within 24 hours, and the CleverTap flow already exits at 48 hours — so the flow works for the bulk of recoverable carts. The 14% recovering days 1-14 are the ones being missed, and they're disproportionately likely to be higher-value carts (bigger purchases take longer to decide on).
-        <span class="rec">→ extend the flow with day-3/5/7 touches using product-alternative content and reviews — not more discounts. Don't touch the 0-48hr flow, it's already working.</span>
-      </div>
+      <div class="analyst-body" id="recNote"></div>
     </div>
-    <div class="kpi-row">
-      <div class="kpi-card"><div class="kpi-label">Total abandoned (5 wks)</div><div class="kpi-value">5,728</div><div class="kpi-delta neu">Checkouts started, not completed</div></div>
-      <div class="kpi-card"><div class="kpi-label">Recovered (within 14d)</div><div class="kpi-value">2,016</div><div class="kpi-delta pos">35.2% came back and bought</div></div>
-      <div class="kpi-card neg-flag"><div class="kpi-label">Still abandoned</div><div class="kpi-value">3,712</div><div class="kpi-delta neg">64.8% never came back</div></div>
-      <div class="kpi-card"><div class="kpi-label">New/prospect share</div><div class="kpi-value">89%</div><div class="kpi-delta neg">First-time visitors abandon more</div></div>
-      <div class="kpi-card"><div class="kpi-label">Returning abandoners</div><div class="kpi-value">631</div><div class="kpi-delta pos">Higher intent — they've bought before</div></div>
-    </div>
-    <p class="section-title">Recovery by time bucket — when do people actually come back?</p>
+    <div class="kpi-row" id="recKpis"></div>
+    <p class="section-title">Abandoned-checkout recovery — month on month</p>
+    <div class="table-scroll" style="max-height:420px" data-mom="recovery.table" data-label="Metric"></div>
+    <div class="card-sub" style="margin-top:6px">Checkouts in the last ~2 weeks of the latest month still have part of their 14-day window open, so its recovery rate can rise slightly next build.</div>
+    <p class="section-title">Recovery by time — when do people come back?</p>
     <div class="chart-card full">
-      <div class="card-title">Of everyone who eventually recovered, when did they come back?</div><div class="card-sub">From abandon_purchase_behaviour, Aug 12 cohort sample</div>
-      <div class="chart-wrap" style="height:220px"><canvas id="recoveryBucketChart" role="img" aria-label="Recovery by time bucket"></canvas></div>
-      <div class="card-take">Half of all recoveries happen in the first 6 hours. If your recovery email/WhatsApp isn't firing within an hour of abandonment, you're already late for half your recoverable customers.</div>
+      <div class="card-title">Share of recoveries by time after abandoning, monthly</div><div class="card-sub">Under 1 hour is mostly an immediate retry</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="recoveryBucketChart" role="img" aria-label="Recovery timing by month"></canvas></div>
+      <div class="card-take" id="recBucketTake"></div>
     </div>
     <div class="grid-2">
-      <div class="chart-card"><div class="card-title">What they bought when they came back</div><div class="card-sub">Did they buy the same thing, more, or less than they abandoned?</div><div class="chart-wrap" style="height:200px"><canvas id="recoveryTypeChart" role="img" aria-label="Recovery behaviour donut"></canvas></div><div class="card-take">"Exact recovery" (21.5%) means they bought exactly what they left in cart — a straightforward reminder works. "Bought less" means price or a specific SKU was the blocker.</div></div>
-      <div class="chart-card"><div class="card-title">Is recovery getting better or worse over time?</div><div class="card-sub">Recovered vs still-abandoned count, by week</div><div class="chart-wrap" style="height:200px"><canvas id="recoveryTrendChart" role="img" aria-label="Weekly recovery trend"></canvas></div><div class="card-take">Both recovered and still-abandoned counts are growing with overall cart volume — recovery rate itself (35%) has stayed roughly flat, meaning the current flow isn't improving, just scaling with traffic.</div></div>
+      <div class="chart-card"><div class="card-title">What they bought when they came back</div><div class="card-sub" id="recTypeSub"></div><div class="chart-wrap" style="height:200px"><canvas id="recoveryTypeChart" role="img" aria-label="Recovery value versus abandoned value"></canvas></div><div class="card-take" id="recTypeTake"></div></div>
+      <div class="chart-card"><div class="card-title">Recovered vs still abandoned — per day, monthly</div><div class="card-sub">Razorpay checkouts with a phone number</div><div class="chart-wrap" style="height:200px"><canvas id="recoveryTrendChart" role="img" aria-label="Monthly recovery trend"></canvas></div><div class="card-take" id="recTrendTake"></div></div>
     </div>
   </div>
 
@@ -636,17 +628,14 @@
   <!-- RETENTION & COHORTS (new) -->
   <!-- RETENTION & COHORTS (new) -->
   <div class="content" id="page-retention">
-    <div class="data-stamp" data-snap="monthly cohorts Aug 2025 – Aug 2026, built at the August close" data-why="September rebuild on hold: the order table now used elsewhere matches phones differently from the original cohort method (August same-month repeat 220 vs 134), so the table stays as built until the two methods reconcile"></div>
+    <div class="data-stamp" data-text="<b>Monthly cohorts</b> · Aug 2025 – Sep 2026 · September closed and final · rebuilt at every month close (owned-channel recipe, phone-matched)"></div>
     <div class="insight-banner">
       <div class="insight-label">Scope — owned channels: sleepycat.in + Shopify POS + QueueBuster + offline stores</div>
       Customers matched on <b>phone number</b>, not Shopify customer ID — that was the bug: Shopify IDs never link web and store, so web-only retention looked like the whole picture. Marketplaces stay out because they cannot be measured: Amazon and Flipkart mask the buyer phone, ~180k of 357k annual orders carry no identity. Toggle the table below to switch lens.
     </div>
 
     <div class="kpi-row">
-      <div class="kpi-card"><div class="kpi-label">M1 repeat — web + stores</div><div class="kpi-value">6.9%</div><div class="kpi-delta neu">Aug-26 cohort, now closed · 380 of 5,544</div></div>
-      <div class="kpi-card"><div class="kpi-label">M1 repeat — website only</div><div class="kpi-value">2.4%</div><div class="kpi-delta neg">Same cohort, same month — just a narrower lens</div></div>
-      <div class="kpi-card"><div class="kpi-label">M1 repeaters a web-only view misses</div><div class="kpi-value">65%</div><div class="kpi-delta neu">Aug-26 closed: 380 repeaters, only 134 on the website</div></div>
-      <div class="kpi-card neg-flag"><div class="kpi-label">120-day repeat — web + stores</div><div class="kpi-value">14.9%</div><div class="kpi-delta neg">↓ from 19.4% · Jan–Mar 26 vs Aug–Oct 25 cohorts</div></div>
+      <div id="retKpis" style="display:contents"></div>
       <div class="kpi-card"><div class="kpi-label">Repeat AOV vs new AOV</div><div class="kpi-value">−13.3%</div><div class="kpi-delta neu">₹7,192 vs ₹8,297 · repeats are accessories</div></div>
     </div>
 
@@ -660,29 +649,29 @@
       <button class="lens-btn on" onclick="setCohortLens('owned', this)">Website + stores</button>
       <button class="lens-btn" onclick="setCohortLens('web', this)">Website only</button>
     </div>
-    <div class="card-sub" style="margin-bottom:10px">Rows = month of first purchase on sleepycat.in. Cells = % of that cohort who bought again in month N. Customers matched on phone number across web and stores. <i>*</i> = September, in progress. August is now closed and final.</div>
+    <div class="card-sub" style="margin-bottom:10px">Rows = month of first purchase on sleepycat.in. Cells = % of that cohort who bought again in month N. Customers matched on phone number across web and stores. <i>*</i> = month still in progress. September is now closed and final.</div>
     <div class="table-scroll" style="max-height:460px">
       <table class="data-table" id="cohortHeatmapTable">
         <thead><tr><th>Cohort</th><th>Size</th><th>M1</th><th>M2</th><th>M3</th><th>M4</th><th>M5</th><th>M6</th><th>M7</th><th>M8</th><th>M9</th><th>M10</th><th>M11</th><th>M12</th></tr></thead>
         <tbody id="cohortHeatmapBody"></tbody>
       </table>
     </div>
-    <div class="card-take"><b>Store is where repeat happens.</b> On the combined lens M1 runs 5–8% and M2 6–9%; on website-only both roughly third. Same customers, same months — the difference is purely where they bought. Web-only M1 is flat across all 13 cohorts, so the website itself is not deteriorating; it was never carrying much repeat to begin with. Jan 2026 is the strongest cohort on both lenses.</div>
+    <div class="card-take"><b>Store is where repeat happens.</b> On the combined lens M1 runs 5–8% and M2 6–9%; on website-only both roughly third. Same customers, same months — the difference is purely where they bought. Web-only M1 is flat across all 14 cohorts, so the website itself is not deteriorating; it was never carrying much repeat to begin with. Jan 2026 is the strongest cohort on both lenses.</div>
 
-    <p class="section-title">Month-on-month new vs repeat — <b>D2C orders</b>, Aug 2025 – Aug 2026</p>
+    <p class="section-title">Month-on-month new vs repeat — <b>D2C orders</b>, Aug 2025 – Sep 2026</p>
     <div class="chart-card full">
       <div class="legend"><span class="legend-item"><span class="legend-dot" style="background:#6b4226"></span>New customer D2C orders</span><span class="legend-item"><span class="legend-dot" style="background:#e0b64a"></span>Repeat D2C orders</span></div>
       <div class="chart-wrap" style="height:240px"><canvas id="momRepeatChart" role="img" aria-label="Stacked bar chart of monthly new vs repeat orders"></canvas></div>
-      <div class="card-take">Repeat website orders grew 182/month (Aug 25) to 832 (Jul 26) while new-customer orders went 2,729 → 4,690. Read only the last six months: before that the installed base was too small to repeat, so part of the ramp is base maturation.</div>
+      <div class="card-take" id="retMomTake"></div>
     </div>
 
     <p class="section-title">Repeat share of D2C orders — monthly</p>
     <div class="chart-card full">
       <div class="chart-wrap" style="height:220px"><canvas id="yearlyRepeatChart" role="img" aria-label="Yearly repeat share bar and line chart"></canvas></div>
-      <div class="card-take">Repeat share of website orders rose 6.3% (Aug 25) to a 14–15% plateau since April. It is a share <i>of orders</i>, so it also rises when acquisition slows — cross-check against the cohort table, which is immune to that.</div>
+      <div class="card-take" id="retShareTake"></div>
     </div>
 
-    <p class="section-title">Category-wise repeat — who comes back, and from what first purchase</p>
+    <p class="section-title">Category-wise repeat — who comes back, and from what first purchase <span class="snap-badge" data-snap="Aug 27 deep-dive"></span></p>
     <div class="card-sub" style="margin-bottom:10px">Website-only repeat, cohorts Aug 2025 – Jan 2026 (full 6-month read). First-purchase category = highest-value line item on the first order.</div>
     <div class="table-scroll" style="max-height:280px">
       <table class="data-table" id="categoryRetentionTable">
@@ -697,13 +686,13 @@
     <div class="chart-card full">
       <div class="legend"><span class="legend-item"><span class="legend-dot" style="background:#6b4226"></span>Website + stores</span><span class="legend-item"><span class="legend-dot" style="background:#e0b64a"></span>Website only</span></div>
       <div class="chart-wrap" style="height:220px"><canvas id="shopifyVsAllChart" role="img" aria-label="Shopify only vs all channel repeat comparison bar chart"></canvas></div>
-      <div class="card-take">The gap between the lines is repeat the website cannot see — stable at roughly 3x, so web-only numbers are not merely low, they are proportionally wrong. M1 itself is flat on both lenses, but the <b>120-day</b> window is not: web + stores has fallen 19.4% → 14.9% between the Aug–Oct 25 and Jan–Mar 26 cohorts, while website-only fell 10.0% → 8.3%. <span class="rec">→ The loss is in weeks 4–16 and it is mostly happening in store, which a web-only dashboard would have shown as a mild wobble. Judge site CRO on the yellow line, customer value on the plum one.</span></div>
+      <div class="card-take" id="retGapTake"></div>
     </div>
 
     <!-- ADD-ON: deeper retention cuts, requested Aug 22 — household depth + category cross-repeat + time-to-repeat, Shopify D2C only, SHOPIFY_ALL_ORDERS -->
     <div class="insight-banner" style="margin-top:22px"><div class="insight-label">Add-on — Aug 22, 2026 — deeper cuts, D2C only, rebuilt on SHOPIFY_ALL_ORDERS</div>Basket-widening and category pull, below.</div>
 
-    <p class="section-title">Household depth — distinct categories bought, by lifetime order count</p>
+    <p class="section-title">Household depth — distinct categories bought, by lifetime order count <span class="snap-badge" data-snap="Aug 22 deep-dive"></span></p>
     <div class="explain-box"><b>Multi-category % =</b> % of customers in that row who have bought from 2 or more different categories (Mattress/Bedding/Pillow/Case/Pet Bed) across their full order history — i.e. they've genuinely expanded their basket, not just reordered the same thing. "Avg. distinct categories" is the same idea as a raw number instead of a threshold.</div>
     <div class="table-scroll" style="max-height:220px">
       <table class="data-table">
@@ -718,7 +707,7 @@
     </div>
     <div class="card-take">1→2 orders: multi-category rate triples, 18.2%→54.6%. Sharpest jump in the curve — highest-leverage point for a cross-category nudge is the 2nd order, not the 5th.</div>
 
-    <p class="section-title">Household depth by first-purchase category</p>
+    <p class="section-title">Household depth by first-purchase category <span class="snap-badge" data-snap="Aug 22 deep-dive"></span></p>
     <div class="table-scroll" style="max-height:220px">
       <table class="data-table">
         <thead><tr><th>First category</th><th>Customers</th><th>Avg. distinct categories</th><th>Multi-category %</th></tr></thead>
@@ -733,7 +722,7 @@
     </div>
     <div class="card-take">Case-first and Bedding-first customers are the deepest baskets by far (74.0%, 56.2% multi-category) despite being the smallest/mid-size cohorts — accessory-first buyers keep adding categories. Mattress-first, the biggest cohort (15,695), sits at just 19.7% — most mattress buyers never come back for anything else at all. Pillow-first and Pet Bed-first are close to single-category dead ends (4.9%, 3.7%).</div>
 
-    <p class="section-title">Household depth by city — top 8 metros</p>
+    <p class="section-title">Household depth by city — top 8 metros <span class="snap-badge" data-snap="Aug 22 deep-dive"></span></p>
     <div class="table-scroll" style="max-height:260px">
       <table class="data-table">
         <thead><tr><th>City</th><th>Customers</th><th>Avg. distinct categories</th><th>Multi-category %</th></tr></thead>
@@ -751,7 +740,7 @@
     </div>
     <div class="card-take">Delhi is the outlier again (23.3% multi-category, lowest of all 8 metros) — same city that showed the weakest mattress order volume on the SKU page. Worth checking together: is Delhi a genuinely smaller/newer market for Sleepycat, or is something specific to that city (fulfillment, marketing spend, competition) capping both order volume and repeat depth. Hyderabad and Kolkata lead despite mid-size customer bases — depth doesn't track city size.</div>
 
-    <p class="section-title">Category cross-repeat + time-to-repeat — first purchase → what they buy next, and how long it takes</p>
+    <p class="section-title">Category cross-repeat + time-to-repeat — first purchase → what they buy next, and how long it takes <span class="snap-badge" data-snap="Aug 22 deep-dive"></span></p>
     <div class="explain-box">Rows = first-order category. Each cell = customers who repeat-bought that column's category, and their average days-to-repeat. Customer-level, D2C only, full history.</div>
     <div class="table-scroll" style="max-height:280px">
       <table class="data-table">
@@ -2012,16 +2001,6 @@ new Chart(document.getElementById('channelChart'), { type: 'bar', data: { labels
 
 const wks = ['May 11','May 18','May 25','Jun 1','Jun 8','Jun 15','Jun 22','Jun 29','Jul 6','Jul 13','Jul 20','Jul 27','Aug 3','Aug 10'];
 
-new Chart(document.getElementById('recoveryBucketChart'), { type: 'bar', data: { labels: ['<1 Hour','1-6 Hours','6-24 Hours','1-3 Days','3-7 Days','7-14 Days'], datasets: [{ data: [18, 32, 25, 15, 7, 3], backgroundColor: ['#3a8a6b','#3a8a6b','#d99a1b','#a5401f','#c0392b','#c0392b'], borderRadius: 4 }] }, options: { ...baseOpts, plugins: { ...baseOpts.plugins, tooltip: { ...baseOpts.plugins.tooltip, callbacks: { label: v => v.raw + '% of recoveries' } } } } });
-
-new Chart(document.getElementById('recoveryTypeChart'), { type: 'doughnut', data: { labels: ['Still abandoned','Exact recovery','Bought less','Bought more'], datasets: [{ data: [64.8, 21.5, 11.2, 2.5], backgroundColor: ['#c0392b','#3a8a6b','#d99a1b',PLUM], borderWidth: 2, borderColor: surface }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
-addLegend('recoveryTypeChart', [{l:'Still abandoned',v:64.8,c:'#c0392b'},{l:'Exact recovery',v:21.5,c:'#3a8a6b'},{l:'Bought less',v:11.2,c:'#d99a1b'},{l:'Bought more',v:2.5,c:PLUM}]);
-
-new Chart(document.getElementById('recoveryTrendChart'), { type: 'bar', data: { labels: ['Jul 13','Jul 20','Jul 27','Aug 3','Aug 10'], datasets: [
-  { label: 'Recovered', data: [132,281,343,708,552], backgroundColor: '#3a8a6b', borderRadius: 4 },
-  { label: 'Still abandoned', data: [262,537,640,1241,1032], backgroundColor: '#c0392b', borderRadius: 4 }
-] }, options: baseOpts });
-
 const wks5 = ['Jul 13','Jul 20','Jul 27','Aug 3','Aug 10'];
 
 function renderRepeatSequence() {
@@ -2099,13 +2078,13 @@ const STATE_POS = [
 const nonMattressWeeklyLabels = ['Jun 29','Jul 6','Jul 13','Jul 20','Jul 27','Aug 3','Aug 10'];
 
 // ---- RETENTION & COHORTS (new module) ----
-const COHORT_DATA = [{"m": "Aug 26", "size": 5544, "web": [134, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "owned": [380, 31, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "ready": 1}, {"m": "Jul 26", "size": 4501, "web": [122, 143, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0], "owned": [339, 263, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0], "ready": 2}, {"m": "Jun 26", "size": 3003, "web": [72, 104, 74, 0, 0, 0, 0, 0, 0, 0, 0, 0], "owned": [208, 224, 106, 0, 0, 0, 0, 0, 0, 0, 0, 0], "ready": 3}, {"m": "May 26", "size": 3251, "web": [74, 80, 69, 51, 0, 0, 0, 0, 0, 0, 0, 0], "owned": [237, 203, 96, 74, 0, 0, 0, 0, 0, 0, 0, 0], "ready": 4}, {"m": "Apr 26", "size": 3267, "web": [73, 71, 50, 61, 39, 0, 0, 0, 0, 0, 0, 0], "owned": [237, 191, 95, 93, 49, 0, 0, 0, 0, 0, 0, 0], "ready": 5}, {"m": "Mar 26", "size": 3353, "web": [80, 85, 62, 33, 53, 36, 0, 0, 0, 0, 0, 0], "owned": [159, 163, 94, 55, 63, 44, 0, 0, 0, 0, 0, 0], "ready": 6}, {"m": "Feb 26", "size": 3481, "web": [79, 87, 50, 40, 29, 52, 31, 0, 0, 0, 0, 0], "owned": [219, 146, 73, 73, 44, 55, 37, 0, 0, 0, 0, 0], "ready": 7}, {"m": "Jan 26", "size": 4295, "web": [161, 142, 60, 50, 51, 39, 46, 45, 0, 0, 0, 0], "owned": [330, 250, 101, 86, 68, 48, 51, 52, 0, 0, 0, 0], "ready": 8}, {"m": "Dec 25", "size": 3447, "web": [79, 116, 54, 44, 43, 34, 33, 28, 36, 0, 0, 0], "owned": [187, 219, 89, 57, 57, 46, 40, 36, 41, 0, 0, 0], "ready": 9}, {"m": "Nov 25", "size": 3227, "web": [77, 113, 51, 47, 48, 32, 33, 32, 39, 36, 0, 0], "owned": [180, 211, 84, 74, 62, 39, 37, 41, 43, 41, 0, 0], "ready": 10}, {"m": "Oct 25", "size": 3858, "web": [103, 132, 71, 62, 45, 36, 39, 31, 27, 38, 38, 0], "owned": [308, 251, 106, 104, 58, 43, 48, 44, 30, 42, 43, 0], "ready": 11}, {"m": "Sep 25", "size": 3282, "web": [82, 145, 69, 72, 57, 33, 28, 39, 41, 33, 29, 51], "owned": [215, 311, 109, 102, 83, 40, 39, 48, 50, 35, 31, 58], "ready": 12}, {"m": "Aug 25", "size": 2606, "web": [72, 107, 60, 38, 39, 33, 24, 33, 34, 27, 24, 27], "owned": [188, 208, 97, 65, 49, 39, 27, 37, 39, 31, 29, 30], "ready": 12}];
+const COHORT_DATA = SC_DATA.RET.CD;
 let COHORT_LENS = "owned";
 const CATEGORY_RETENTION = [{"cat": "Mattress", "cohort": 9959, "vals": [357, 381, 172, 139, 126, 96]}, {"cat": "Pillow", "cohort": 3803, "vals": [146, 134, 65, 57, 66, 42]}, {"cat": "Pet bed", "cohort": 1828, "vals": [34, 43, 22, 16, 13, 20]}, {"cat": "Bedding (sheets, comforters, cases)", "cohort": 1762, "vals": [64, 75, 41, 36, 30, 24]}, {"cat": "Mattress topper", "cohort": 1122, "vals": [23, 36, 19, 12, 9, 4]}, {"cat": "Mattress protector", "cohort": 684, "vals": [14, 17, 9, 6, 8, 10]}, {"cat": "Other", "cohort": 195, "vals": [6, 3, 1, 7, 3, 2]}];
-const M1_BY_LENS = [{"m": "Aug 25", "web": 2.76, "owned": 7.21}, {"m": "Sep 25", "web": 2.5, "owned": 6.55}, {"m": "Oct 25", "web": 2.67, "owned": 7.98}, {"m": "Nov 25", "web": 2.39, "owned": 5.58}, {"m": "Dec 25", "web": 2.29, "owned": 5.43}, {"m": "Jan 26", "web": 3.75, "owned": 7.68}, {"m": "Feb 26", "web": 2.27, "owned": 6.29}, {"m": "Mar 26", "web": 2.39, "owned": 4.74}, {"m": "Apr 26", "web": 2.23, "owned": 7.25}, {"m": "May 26", "web": 2.28, "owned": 7.29}, {"m": "Jun 26", "web": 2.4, "owned": 6.93}, {"m": "Jul 26", "web": 2.71, "owned": 7.53}, {"m": "Aug 26", "web": 2.42, "owned": 6.85}];
-const REPEAT_SHARE_MONTHLY = [{"m": "Aug 25", "pct": 6.3, "repeat": 182}, {"m": "Sep 25", "pct": 7.5, "repeat": 280}, {"m": "Oct 25", "pct": 9.0, "repeat": 401}, {"m": "Nov 25", "pct": 10.5, "repeat": 394}, {"m": "Dec 25", "pct": 11.5, "repeat": 471}, {"m": "Jan 26", "pct": 11.4, "repeat": 583}, {"m": "Feb 26", "pct": 11.8, "repeat": 490}, {"m": "Mar 26", "pct": 12.0, "repeat": 488}, {"m": "Apr 26", "pct": 14.1, "repeat": 554}, {"m": "May 26", "pct": 14.8, "repeat": 582}, {"m": "Jun 26", "pct": 15.2, "repeat": 559}, {"m": "Jul 26", "pct": 15.1, "repeat": 832}, {"m": "Aug 26 (to 26th)", "pct": 14.6, "repeat": 867}];
+const M1_BY_LENS = SC_DATA.RET.M1;
+const REPEAT_SHARE_MONTHLY = SC_DATA.RET.RS;
 const YEARLY_REPEAT = REPEAT_SHARE_MONTHLY;
-const MONTHLY_REPEAT = [{"m": "Aug 25", "new": 2729, "repeat": 182}, {"m": "Sep 25", "new": 3456, "repeat": 280}, {"m": "Oct 25", "new": 4052, "repeat": 401}, {"m": "Nov 25", "new": 3365, "repeat": 394}, {"m": "Dec 25", "new": 3634, "repeat": 471}, {"m": "Jan 26", "new": 4515, "repeat": 583}, {"m": "Feb 26", "new": 3673, "repeat": 490}, {"m": "Mar 26", "new": 3569, "repeat": 488}, {"m": "Apr 26", "new": 3375, "repeat": 554}, {"m": "May 26", "new": 3360, "repeat": 582}, {"m": "Jun 26", "new": 3113, "repeat": 559}, {"m": "Jul 26", "new": 4690, "repeat": 832}, {"m": "Aug 26 (to 26th)", "new": 5086, "repeat": 867}];
+const MONTHLY_REPEAT = SC_DATA.RET.MR;
 
 function setCohortLens(lens, el) {
   COHORT_LENS = lens;
@@ -2122,7 +2101,7 @@ function renderCohortHeatmap() {
     const tds = vals.map((v, i) => {
       if (v === 0 && i > last) return `<td style="color:var(--text-muted)">—</td>`;
       const pct = c.size ? v / c.size * 100 : 0;
-      if (i >= c.ready) return `<td style="color:var(--text-muted);font-style:italic" title="September in progress — 2 days only, not plotted">${pct.toFixed(1)}%*</td>`;
+      if (i >= c.ready) return `<td style="color:var(--text-muted);font-style:italic" title="Month in progress — not final">${pct.toFixed(1)}%*</td>`;
       const bg = pct >= hi ? 'var(--bg-success)' : pct >= mid ? 'rgba(224,182,74,0.18)' : 'var(--bg-danger)';
       const col = pct >= hi ? 'var(--text-success)' : pct >= mid ? 'var(--mustard-dark)' : 'var(--text-danger)';
       return `<td style="background:${bg};color:${col}">${pct.toFixed(1)}%</td>`;
@@ -2291,6 +2270,7 @@ mfbRender();
     ? `<b>Month on month</b> · ${ML[0]} – ${CURN} ${YR} · all four months complete (${CURN} closed ${fmtD(MM.through)}) · the new month is on the Daily tab and joins here from day 7 · volumes compared per day, rates in points`
     : `<b>Month on month</b> · ${ML[0]} – ${CURN} ${YR} · <b>${CUR}</b> = ${lastLbl} (month to date) · volumes compared per day, rates in points · data through ${fmtD(MM.through)}`;
   document.querySelectorAll('.data-stamp').forEach(el => {
+    if (el.dataset.text) { el.innerHTML = `<span class="live-dot"></span>${el.dataset.text}`; el.classList.add('is-live'); return; }
     if (el.dataset.snap) el.innerHTML = `<span class="snap-dot"></span><b>Snapshot, not auto-refreshed</b> · ${el.dataset.snap}${el.dataset.why ? ' · ' + el.dataset.why : ''}`;
     else el.innerHTML = `<span class="live-dot"></span>${liveTxt}${el.dataset.extra ? ' · ' + el.dataset.extra : ''}`;
     el.classList.add(el.dataset.snap ? 'is-snap' : 'is-live');
@@ -2520,8 +2500,49 @@ mfbRender();
     set('bounceTake', `Session-weighted bounce: ${F.bounce.map((v, i) => ML[i] + ' ' + (v == null ? '— (no export)' : v.toFixed(1) + '%')).join(' · ')}. Bounce moves with the paid-traffic mix — read it next to the Google CPC row on Funnel & checkout.`);
   }
   document.querySelectorAll('.cm').forEach(e => e.textContent = CUR); document.querySelectorAll('.pm').forEach(e => e.textContent = PRV);
+  // ---------- CART RECOVERY (Razorpay abandoned checkouts, phone-matched) ----------
+  const RC = MOM.recovery; if (RC) {
+    const R = RC.raw, rr = RC.table[2].v, i = 3;
+    const fast = (R.h1[i] + R.h6[i] + R.h24[i]) / R.rec[i] * 100, late = (R.d3[i] + R.d7[i] + R.d14[i]) / R.rec[i] * 100;
+    set('recKpis', [
+      kpi('Abandoned checkouts · ' + CUR, Math.round(R.ab[i]).toLocaleString('en-IN'), 'Unpaid at the Razorpay step', 'neu'),
+      kpi('Recovered within 14 days', Math.round(R.rec[i]).toLocaleString('en-IN'), rr[i].toFixed(1) + '% came back and bought', 'pos'),
+      kpi('Still abandoned', Math.round(R.ab[i] - R.rec[i]).toLocaleString('en-IN'), (100 - rr[i]).toFixed(1) + '% never came back', 'neg', true),
+      kpi('Value left unpaid', L(R.abv[i] - R.recv[i]), 'after recoveries, ' + CUR, 'neg'),
+      kpi('Returning-customer recovery', RC.table[7].v[i].toFixed(1) + '%', 'vs ' + rr[i].toFixed(1) + '% overall', 'pos')].join(''));
+    set('recNote', `${fast.toFixed(0)}% of ${CUR} recoveries came back within 24 hours (most inside an hour — an immediate retry); ${late.toFixed(0)}% took 1–14 days. Recovery rate ${ML.map((m, j) => m + ' ' + (rr[j] == null ? '—' : rr[j].toFixed(1) + '%')).join(' · ')}. <span class="rec">→ The day-3/5/7 window is where a nudge can still win carts back — extend the flow past 48 hours with reviews and product-alternative content rather than more discounts.</span>`);
+    const bk = ['h1', 'h6', 'h24', 'd3', 'd7', 'd14'], bl = ['<1 hour', '1–6 hours', '6–24 hours', '1–3 days', '3–7 days', '7–14 days'], bc = ['#3a8a6b', '#6aa88a', MUSTARD, '#d99a1b', '#a5401f', '#c0392b'];
+    mk('recoveryBucketChart', { type: 'bar', data: { labels: ML, datasets: bk.map((k, j) => ({ label: bl[j], data: R[k].map((v, m) => R.rec[m] ? +(v / R.rec[m] * 100).toFixed(1) : null), backgroundColor: bc[j] })) },
+      options: { ...baseOpts, plugins: legendBottom, scales: { x: { stacked: true, grid: { display: false }, ticks: { color: textMuted } }, y: { stacked: true, max: 100, grid: { color: gridColor }, ticks: { color: textMuted, callback: v => v + '%' } } } } });
+    set('recBucketTake', `${CUR}: ${(R.h1[i] / R.rec[i] * 100).toFixed(0)}% of recoveries inside the first hour, ${((R.h6[i] + R.h24[i]) / R.rec[i] * 100).toFixed(0)}% between 1 and 24 hours, ${late.toFixed(0)}% after day 1.`);
+    const still = R.ab[i] - R.rec[i];
+    mk('recoveryTypeChart', { type: 'doughnut', data: { labels: ['Still abandoned', 'Same value (±5%)', 'Bought less', 'Bought more'], datasets: [{ data: [still, R.same[i], R.less[i], R.more[i]], backgroundColor: ['#c0392b', '#3a8a6b', '#d99a1b', PLUM], borderWidth: 2, borderColor: surface }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, position: 'bottom', labels: { color: textSecondary, font: { size: 11 } } } } } });
+    set('recTypeSub', `${CUR}: recovered order value vs the abandoned checkout value`);
+    set('recTypeTake', `Of ${CUR} recoveries, ${(R.same[i] / R.rec[i] * 100).toFixed(0)}% bought the same value, ${(R.less[i] / R.rec[i] * 100).toFixed(0)}% bought less (price or one item was the blocker), ${(R.more[i] / R.rec[i] * 100).toFixed(0)}% bought more.`);
+    mk('recoveryTrendChart', { type: 'bar', data: { labels: ML, datasets: [barDs('Recovered / day', R.rec.map((v, m) => +(v / MD[m]).toFixed(1)), 2), barDs('Still abandoned / day', R.ab.map((v, m) => +((v - R.rec[m]) / MD[m]).toFixed(1)), 3)] },
+      options: { ...baseOpts, plugins: legendBottom, scales: { x: { stacked: true, grid: { display: false }, ticks: { color: textMuted } }, y: { stacked: true, grid: { color: gridColor }, ticks: { color: textMuted } } } } });
+    set('recTrendTake', `Abandoned checkouts per day fall in ${CURN} because GoKwik (${P ? P.gkShare[i].toFixed(0) : '—'}% of orders) handles its own payment step, which Razorpay never sees. Read the rate, not the volume.`);
+  }
+  // ---------- RETENTION KPIs + takes ----------
+  const RT = SC_DATA.RET; if (RT) {
+    const last = RT.CD.find(c => c.ready >= 1), o0 = last.owned[0], w0 = last.web[0];
+    const R1 = RT.R120, pool = a => { const n = a.reduce((s, x) => s + x.n, 0); return { n, all: a.reduce((s, x) => s + x.all, 0) / n * 100, web: a.reduce((s, x) => s + x.web, 0) / n * 100, lab: a[0].m + '–' + a[a.length - 1].m }; };
+    const rec3 = pool(R1.slice(-3)), first3 = pool(R1.slice(0, 3));
+    set('retKpis', [
+      kpi('M1 repeat — web + stores', (o0 / last.size * 100).toFixed(1) + '%', `${last.m} cohort, now closed · ${o0.toLocaleString('en-IN')} of ${last.size.toLocaleString('en-IN')}`, 'neu'),
+      kpi('M1 repeat — website only', (w0 / last.size * 100).toFixed(1) + '%', 'Same cohort, same month — a narrower lens', 'neu'),
+      kpi('M1 repeaters a web-only view misses', ((o0 - w0) / o0 * 100).toFixed(0) + '%', `${last.m}: ${o0} repeaters, only ${w0} on the website`, 'neu'),
+      kpi('120-day repeat — web + stores', rec3.all.toFixed(1) + '%', `${rec3.lab} cohorts · vs ${first3.all.toFixed(1)}% for ${first3.lab}`, rec3.all >= first3.all ? 'pos' : 'neg', rec3.all < first3.all - 2)].join(''));
+    const MRl = RT.MR, a = MRl[0], z = MRl[MRl.length - 1];
+    set('retMomTake', `Repeat website orders went ${a.repeat}/month (${a.m}) to ${z.repeat} (${z.m}); new-customer orders ${a.new.toLocaleString('en-IN')} → ${z.new.toLocaleString('en-IN')}. Repeat = the phone number had a website order on an earlier day. Read only the last six months: before that the customer base was too young to repeat.`);
+    const RSl = RT.RS.slice(-6);
+    set('retShareTake', `Repeat share of website orders, last six months: ${RSl.map(x => x.m + ' ' + x.pct + '%').join(' · ')}. A share of orders also rises when acquisition slows, so cross-check the cohort table above.`);
+    set('retGapTake', `The gap between the lines is repeat the website cannot see. 120-day repeat on web + stores: ${R1.map(x => x.m + ' ' + (x.all / x.n * 100).toFixed(1) + '%').slice(-6).join(' · ')}; website-only ${rec3.web.toFixed(1)}% for ${rec3.lab} vs ${first3.web.toFixed(1)}% for ${first3.lab}. <span class="rec">→ Judge site CRO on the yellow line, customer value on the plum one.</span>`);
+  }
+
   // nav freshness dots
-  const SNAP = { behaviour: 'Snapshot', retention: 'Cohorts to Aug', competitor: 'Qualitative', roadmap: 'Qualitative' };
+  const SNAP = { competitor: 'Qualitative', roadmap: 'Qualitative' };
   document.querySelectorAll('.nav-item').forEach(b => {
     const m = (b.getAttribute('onclick') || '').match(/showPage\('([a-z0-9]+)'/); if (!m) return;
     const s = document.createElement('span'); s.className = 'nav-fresh ' + (SNAP[m[1]] ? 'snap' : 'live');

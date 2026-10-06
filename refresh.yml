@@ -1,0 +1,56 @@
+name: Refresh dashboard data
+
+on:
+  schedule:
+    - cron: '30 2 * * *'      # 08:00 IST daily (GitHub cron is UTC)
+  workflow_dispatch:           # lets you run it by hand from the Actions tab
+
+permissions:
+  contents: write              # needed to commit data/data.js back
+
+concurrency:
+  group: refresh-data
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install --quiet snowflake-connector-python
+
+      - name: Build data.js from Snowflake
+        env:
+          SNOWFLAKE_ACCOUNT:   ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER:      ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD:  ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_ROLE:      ${{ secrets.SNOWFLAKE_ROLE }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+        run: python scripts/build_data.py
+
+      - name: Sanity-check before committing
+        run: |
+          python - <<'PY'
+          import json, sys
+          d = json.load(open('data/data.json'))
+          days = d['DAILY']
+          # refuse to publish an empty or obviously broken pull rather than overwrite good data
+          assert len(days) >= 30, f"only {len(days)} days returned"
+          assert sum(r['orders'] for r in days) > 0, "zero orders across the whole window"
+          assert sum(r['sessions'] for r in days) > 0, "zero sessions across the whole window"
+          print(f"ok: {len(days)} days through {d['as_of_data']}")
+          PY
+
+      - name: Commit if changed
+        run: |
+          git config user.name  "sleepycat-bot"
+          git config user.email "actions@github.com"
+          git add data/data.js data/data.json
+          git diff --staged --quiet && echo "no change" && exit 0
+          git commit -m "data: refresh through $(python -c "import json;print(json.load(open('data/data.json'))['as_of_data'])")"
+          git push
