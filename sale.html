@@ -218,6 +218,7 @@
     <button class="nav-item active" onclick="showPage('pulse', this)"><span class="nav-icon">✺</span> Sale pulse</button>
     <button class="nav-item" onclick="showPage('funnel', this)"><span class="nav-icon">▽</span> Full funnel — by week</button>
     <button class="nav-item" onclick="showPage('orders', this)"><span class="nav-icon">₹</span> Orders, revenue & AOV</button>
+    <button class="nav-item" onclick="showPage('checkout', this)"><span class="nav-icon">⇥</span> Checkout behaviour</button>
   </div>
   <div class="nav-section"><div class="nav-label">What sells</div>
     <button class="nav-item" onclick="showPage('products', this)"><span class="nav-icon">▤</span> Products & attach rate</button>
@@ -294,6 +295,27 @@
     </div>
   </div>
 
+  <!-- CHECKOUT (GoKwik exports) -->
+  <div class="content" id="page-checkout">
+    <div class="data-stamp" id="ckStamp"></div>
+    <div class="kpi-row" id="ckKpis"></div>
+    <p class="section-title">Orders vs abandoned checkouts by day <span class="st-sub">· completion = orders ÷ (orders + abandoned carts)</span></p>
+    <div class="table-scroll" style="max-height:380px"><table class="data-table"><thead><tr><th>Day</th><th>Orders</th><th>Abandoned</th><th>Completion</th><th>Abandoned ₹</th><th>Came back & bought</th><th>Coupon on orders</th></tr></thead><tbody id="ckDays"></tbody></table></div>
+    <div class="grid-2" style="margin-top:14px">
+      <div class="chart-card"><div class="card-title">Where checkouts drop</div><div class="card-sub">Share of abandoned carts by last step · sale vs BAU</div><div class="chart-wrap" style="height:230px"><canvas id="ckStage" role="img" aria-label="Drop-off step"></canvas></div><div class="card-take" id="ckStageTake"></div></div>
+      <div class="chart-card"><div class="card-title">Completion by cart value</div><div class="card-sub">Sale vs BAU</div><div class="chart-wrap" style="height:230px"><canvas id="ckBand" role="img" aria-label="Completion by cart value"></canvas></div><div class="card-take" id="ckBandTake"></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="chart-card"><div class="card-title">Coupons — orders vs abandoned</div><div class="card-sub">Sale days</div><div class="table-scroll" style="max-height:300px;margin-top:8px"><table class="data-table"><thead><tr><th>Code</th><th>Orders</th><th>Abandoned</th><th>Completion</th></tr></thead><tbody id="ckCode"></tbody></table></div><div class="card-take" id="ckCodeTake"></div></div>
+      <div class="chart-card"><div class="card-title">Products in checkout</div><div class="card-sub">Sale days · orders vs abandoned carts containing the product</div><div class="table-scroll" style="max-height:300px;margin-top:8px"><table class="data-table"><thead><tr><th>Product</th><th>Orders</th><th>Abandoned</th><th>Completion</th><th>BAU</th></tr></thead><tbody id="ckProd"></tbody></table></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="chart-card"><div class="card-title">Sources — completion</div><div class="card-sub">Sale days vs BAU</div><div class="table-scroll" style="max-height:300px;margin-top:8px"><table class="data-table"><thead><tr><th>Source / medium</th><th>Orders</th><th>Abandoned</th><th>Completion</th><th>BAU</th></tr></thead><tbody id="ckSrc"></tbody></table></div></div>
+      <div class="chart-card"><div class="card-title">Landing pages — completion</div><div class="card-sub">Sale days vs BAU · GoKwik records where the shopper landed</div><div class="table-scroll" style="max-height:300px;margin-top:8px"><table class="data-table"><thead><tr><th>Landing page</th><th>Orders</th><th>Abandoned</th><th>Completion</th><th>BAU</th></tr></thead><tbody id="ckLp"></tbody></table></div></div>
+    </div>
+    <div class="chart-card full"><div class="card-title">How customers paid</div><div class="card-sub">Share of GoKwik orders · sale vs BAU</div><div class="chart-wrap" style="height:190px"><canvas id="ckPay" role="img" aria-label="Payment method mix"></canvas></div></div>
+  </div>
+
   <!-- PRODUCTS -->
   <div class="content" id="page-products">
     <div class="kpi-row" id="attachKpis"></div>
@@ -356,6 +378,7 @@
 </div>
 </div>
 <script src="data/sale_data.js"></script>
+<script src="data/checkout_data.js"></script>
 <script>
 const S = window.SC_SALE, M = S.meta;
 const $ = id => document.getElementById(id);
@@ -639,6 +662,54 @@ function weekRows(rowFn, refFn) {
     kpi('Gross ÷ spend', (sum(SALE, gross) / spS).toFixed(1) + 'x', `incl. stores · BAU ${(sum(BAU, gross) / spB).toFixed(1)}x`, cls(sum(SALE, gross) / spS - sum(BAU, gross) / spB)),
     kpi('Google CPC orders / day', N((SR.find(s => s.k === 'GOOGLE/CPC') || { sale: [0, 0, 0] }).sale[2]), `BAU ${N(((SR.find(s => s.k === 'GOOGLE/CPC') || {}).bau || [0, 0, 0])[2], 1)}`, 'pos'),
     kpi('Meta orders / day', N(sum(SR.filter(s => s.k.startsWith('FACEBOOK/')), s => s.sale[2])), `tracked by UTM · BAU ${N(sum(SR.filter(s => s.k.startsWith('FACEBOOK/') && s.bau), s => s.bau[2]), 1)}`, 'neu')].join('');
+})();
+
+// ---------- CHECKOUT (GoKwik exports) ----------
+(function checkout() {
+  const K = window.SC_CK; if (!K) return;
+  const cr = (o, a) => o + a ? o / (o + a) * 100 : null;
+  const kd = K.days, KB = kd.filter(d => d.per === 'BAU'), KS = kd.filter(d => d.per === 'SALE');
+  const t = (set, f) => sum(set, x => x[f] || 0);
+  const cB = cr(t(KB, 'o'), t(KB, 'ab')), cS = cr(t(KS, 'o'), t(KS, 'ab'));
+  const rng = ds => ds.length ? fd(ds[0].d) + (ds.length > 1 ? ' – ' + fd(ds[ds.length - 1].d) : '') : '—';
+  const bauTxt = [...new Set(KB.map(d => d.d.slice(0, 7)))].map(m => rng(KB.filter(d => d.d.startsWith(m)))).join(' + ');
+  const cutT = K.meta.cut.slice(11);
+  $('ckStamp').innerHTML = `<span class="live-dot"></span><b>GoKwik checkout exports</b> · sale ${rng(KS)}${K.meta.partial ? ` (${fd(K.meta.cut.slice(0, 10))} up to ${cutT})` : ''} vs BAU ${bauTxt} · aggregates only, no customer details`;
+  const recS = t(KS, 'rec') / t(KS, 'ab') * 100, recB = t(KB, 'rec') / t(KB, 'ab') * 100;
+  const st = p => { const o = K.stage[p], tot = sum(Object.values(o), x => x); return k => (o[k] || 0) / tot * 100; };
+  const sS = st('SALE'), sB = st('BAU');
+  const fullS = KS.filter(d => !(K.meta.partial && d.d === K.meta.cut.slice(0, 10)));
+  const abDay = fullS.length ? t(fullS, 'ab') / fullS.length : t(KS, 'ab'), abValDay = fullS.length ? t(fullS, 'abVal') / fullS.length : t(KS, 'abVal');
+  const pay = p => { const o = K.pay[p], tot = sum(Object.values(o), x => x); return k => (o[k] || 0) / tot * 100; };
+  const pS = pay('SALE'), pB = pay('BAU');
+  $('ckKpis').innerHTML = [
+    kpi('Checkout completion', P(cS, 1), `BAU ${P(cB, 1)} · ${PP(cS, cB)}`, cls(cS - cB), cS < cB - 2),
+    kpi('Abandoned checkouts / day', N(abDay), `BAU ${N(t(KB, 'ab') / KB.length)} · full sale days`, 'neu'),
+    kpi('Abandoned value / day', L(abValDay), `BAU ${L(t(KB, 'abVal') / KB.length)}`, 'neu'),
+    kpi('Dropped at payment', P(sS('Payment Page') + sS('Payment Pending') + sS('Payment failed'), 0), `of abandoned carts · BAU ${P(sB('Payment Page') + sB('Payment Pending') + sB('Payment failed'), 0)}`, 'neu'),
+    kpi('Came back & bought', P(recS, 1), `of abandoned carts so far (window still open) · BAU ${P(recB, 1)}`, 'neu'),
+    kpi('EMI + pay later', P(pS('Card EMI') + pS('Snapmint (pay later)'), 0), `of orders · BAU ${P(pB('Card EMI') + pB('Snapmint (pay later)'), 0)}`, 'neu')].join('');
+  const row = (lab, set, c) => { const o = t(set, 'o'), a = t(set, 'ab'), n = set.length || 1;
+    return `<tr class="${c}"><td>${lab}</td><td>${N(o / n)}</td><td>${N(a / n)}</td><td><b>${P(cr(o, a), 1)}</b></td><td>${L(t(set, 'abVal') / n)}</td><td>${P(t(set, 'rec') / a * 100, 1)}</td><td>${P(t(set, 'oCode') / o * 100, 0)}</td></tr>`; };
+  $('ckDays').innerHTML = row('BAU per day', KB, 'ref') + kd.filter(d => d.per !== 'BAU' && d.per !== 'X').slice().reverse()
+    .map(d => row(`${fd(d.d)} <span class="sub">${DOW(d.d)}${d.per === 'EVE' ? ' · launch eve' : ''}${K.meta.partial && d.d === K.meta.cut.slice(0, 10) ? ' · to ' + cutT : ''}</span>`, [d], d.per === 'EVE' ? 'eve' : '')).join('');
+  const SK = ['Login Page', 'Login OTP Page', 'Pincode Addition Page', 'Address Page', 'Address Modification Page', 'Payment Page', 'Payment Pending', 'Payment failed'];
+  new Chart($('ckStage'), { type: 'bar', data: { labels: SK.map(k => k.replace(' Page', '')), datasets: [{ label: 'BAU', data: SK.map(k => +sB(k).toFixed(1)), backgroundColor: GREY + '99' }, { label: 'Sale', data: SK.map(k => +sS(k).toFixed(1)), backgroundColor: PLUM }] },
+    options: { ...baseOpts, indexAxis: 'y', plugins: { ...baseOpts.plugins, legend: legendOn }, scales: { x: { ...baseOpts.scales.x, ticks: { ...baseOpts.scales.x.ticks, callback: v => v + '%' } }, y: baseOpts.scales.y } } });
+  $('ckStageTake').innerHTML = `${P(sS('Payment Page'), 0)} of sale abandons happen on the payment page and ${P(sS('Payment failed'), 1)} after a failed payment (BAU ${P(sB('Payment failed'), 1)}). Login/OTP and address steps lose few shoppers.`;
+  const BANDS = ['< ₹2k', '₹2–5k', '₹5–15k', '₹15–30k', '₹30k+'], bm = p => Object.fromEntries(K.band[p].map(r => [r[0], r]));
+  const bS = bm('SALE'), bB = bm('BAU'), bc = (m, k) => m[k] ? cr(m[k][1], m[k][2]) : null;
+  new Chart($('ckBand'), { type: 'bar', data: { labels: BANDS, datasets: [{ label: 'BAU', data: BANDS.map(k => +(bc(bB, k) || 0).toFixed(1)), backgroundColor: GREY + '99' }, { label: 'Sale', data: BANDS.map(k => +(bc(bS, k) || 0).toFixed(1)), backgroundColor: MUSTARD }] },
+    options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: legendOn }, scales: { x: baseOpts.scales.x, y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => v + '%' } } } } });
+  $('ckBandTake').innerHTML = `Mattress-size carts (₹15k+) complete only ${P(bc(bS, '₹15–30k'), 0)} and ${P(bc(bS, '₹30k+'), 0)} of the time in the sale (BAU ${P(bc(bB, '₹15–30k'), 0)} / ${P(bc(bB, '₹30k+'), 0)}) — that is where a CX callback on abandoned carts pays most.`;
+  const tbl = (id, key, top, bauMap) => { const bm = Object.fromEntries((K[key].BAU || []).map(r => [r[0], r]));
+    $(id).innerHTML = K[key].SALE.slice(0, top).map(r => { const b = bm[r[0]]; return `<tr><td>${r[0]}</td><td>${N(r[1])}</td><td>${N(r[2])}</td><td><b>${P(cr(r[1], r[2]), 0)}</b></td>${bauMap === false ? '' : `<td>${b ? P(cr(b[1], b[2]), 0) : '—'}</td>`}</tr>`; }).join(''); };
+  tbl('ckSrc', 'src', 12); tbl('ckLp', 'lp', 12); tbl('ckProd', 'prod', 15); tbl('ckCode', 'code', 10, false);
+  const cm = Object.fromEntries(K.code.SALE.map(r => [r[0], r])), worst = K.code.SALE.filter(r => r[0] !== '(no code)' && r[1] + r[2] >= 50).sort((a, b) => cr(a[1], a[2]) - cr(b[1], b[2]))[0];
+  $('ckCodeTake').innerHTML = worst ? `${worst[0]} converts worst: ${N(worst[1])} orders vs ${N(worst[2])} abandoned (${P(cr(worst[1], worst[2]), 0)}). Check whether the offer is clear at checkout.` : '';
+  const PK = ['UPI', 'Credit card', 'Debit card', 'Card EMI', 'Snapmint (pay later)', 'COD'];
+  new Chart($('ckPay'), { type: 'bar', data: { labels: PK, datasets: [{ label: 'BAU', data: PK.map(k => +pB(k).toFixed(1)), backgroundColor: GREY + '99' }, { label: 'Sale', data: PK.map(k => +pS(k).toFixed(1)), backgroundColor: PLUM }] },
+    options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: legendOn }, scales: { x: baseOpts.scales.x, y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => v + '%' } } } } });
 })();
 
 // ---------- NEXT ----------
