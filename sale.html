@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diwali Sale Analytics</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --surface-0: #f6f1e7; --surface-1: #fbf8f1; --surface-2: #ffffff;
+    --text-primary: #2b2018; --text-secondary: #5e5040; --text-muted: #948572;
+    --border: rgba(43,32,24,0.10); --border-strong: rgba(43,32,24,0.18);
+    --plum: #6b4226; --plum-light: #8a5a36; --mustard: #e0b64a; --mustard-light: #faf1da; --mustard-dark: #8a6a1f;
+    --bg-accent: #f2e9de; --text-accent: #6b4226;
+    --bg-success: #e6f2e2; --text-success: #2f6b1f;
+    --bg-danger: #fbe8e4; --text-danger: #a5401f;
+    --bg-warning: #fbf0d9; --text-warning: #8a5f0c;
+    --radius: 8px; --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface-0: #17130f; --surface-1: #1d1813; --surface-2: #262019;
+      --text-primary: #f3ede2; --text-secondary: #cbbfa9; --text-muted: #948572;
+      --border: rgba(255,255,255,0.10); --border-strong: rgba(255,255,255,0.18);
+      --plum: #b08a5f; --plum-light: #c9a679; --mustard: #dcbb63; --mustard-light: #332c17; --mustard-dark: #e8d29a;
+      --bg-accent: #2e2620; --text-accent: #c9a679;
+      --bg-success: #1c3213; --text-success: #a8d99a;
+      --bg-danger: #3a1e17; --text-danger: #f5a58c;
+      --bg-warning: #3a2c0f; --text-warning: #f0c674;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-sans); background: var(--surface-0); color: var(--text-primary); font-size: 14px; line-height: 1.5; }
+  .app { display: flex; height: 100vh; overflow: hidden; }
+  .sidebar { width: 228px; flex-shrink: 0; background: var(--plum); color: #f3ede8; display: flex; flex-direction: column; overflow-y: auto; }
+  .sidebar-header { padding: 18px 16px 14px; border-bottom: 1px solid rgba(255,255,255,0.14); }
+  .brand-row { display: flex; align-items: center; gap: 8px; }
+  .brand-mark { width: 26px; height: 26px; border-radius: 7px; background: var(--mustard); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: #2b2018; flex-shrink: 0; }
+  .brand { font-size: 14px; font-weight: 500; color: #fff; letter-spacing: -0.2px; }
+  .brand-sub { font-size: 10.5px; color: rgba(243,237,232,0.6); margin-top: 3px; }
+  .nav-section { padding: 13px 8px 2px; }
+  .nav-label { font-size: 9.5px; font-weight: 500; color: rgba(243,237,232,0.42); text-transform: uppercase; letter-spacing: 0.7px; padding: 0 8px; margin-bottom: 4px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; cursor: pointer; font-size: 12.5px; color: rgba(243,237,232,0.8); transition: background 0.12s; border: none; background: none; width: 100%; text-align: left; }
+  .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .nav-item.active { background: var(--mustard); color: #2b2018; font-weight: 500; }
+  .nav-icon { width: 16px; text-align: center; font-size: 14px; flex-shrink: 0; }
+  .updated-badge { margin-top: auto; padding: 12px 16px; font-size: 10px; color: rgba(243,237,232,0.42); border-top: 1px solid rgba(255,255,255,0.14); line-height: 1.5; }
+  .site-link { display: block; padding: 8px 16px 4px; font-size: 11px; color: rgba(243,237,232,0.65); text-decoration: none; }
+  .site-link:hover { color: #fff; }
+  .main { flex: 1; overflow-y: auto; background: var(--surface-0); }
+  .topbar { position: sticky; top: 0; z-index: 10; background: var(--surface-0); border-bottom: 0.5px solid var(--border); padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; }
+  .page-title { font-size: 15px; font-weight: 500; }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+  .chip { font-size: 11.5px; padding: 4px 10px; border-radius: 20px; background: var(--bg-success); color: var(--text-success); font-weight: 500; }
+  .chip.warn { background: var(--bg-warning); color: var(--text-warning); }
+  .chip.danger { background: var(--bg-danger); color: var(--text-danger); }
+  .date-label { font-size: 11.5px; color: var(--text-muted); }
+  .content { padding: 20px 24px 44px; display: none; }
+  .content.active { display: block; }
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .kpi-card { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 12px; padding: 13px 15px; }
+  .kpi-card.neg-flag { border-color: var(--text-danger); border-width: 1px; }
+  .kpi-label { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .kpi-value { font-size: 21px; font-weight: 500; color: var(--text-primary); line-height: 1; margin-bottom: 4px; }
+  .kpi-delta { font-size: 11.5px; display: flex; align-items: center; gap: 3px; }
+  .kpi-delta.pos { color: var(--text-success); } .kpi-delta.neg { color: var(--text-danger); } .kpi-delta.neu { color: var(--text-muted); }
+  .analyst-note { background: var(--plum); color: #f3ede8; border-radius: 12px; padding: 14px 18px; margin-bottom: 18px; }
+  .analyst-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .analyst-head-left { display: flex; align-items: center; gap: 8px; }
+  .analyst-avatar { width: 22px; height: 22px; border-radius: 6px; background: var(--mustard); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; color: #2b2018; flex-shrink: 0; }
+  .analyst-title { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(243,237,232,0.65); }
+  .roadmap-ref { font-size: 9.5px; font-weight: 500; padding: 3px 8px; border-radius: 10px; background: rgba(255,255,255,0.14); color: #f3ede8; white-space: nowrap; }
+  .analyst-body { font-size: 13px; line-height: 1.65; color: #f3ede8; }
+  .analyst-body b { font-weight: 500; color: #fff; }
+  .analyst-body .rec { display: block; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.18); color: var(--mustard); }
+  .analyst-body .decision { font-size: 11px; color: rgba(243,237,232,0.55); margin-top: 6px; }
+  .insight-banner { background: var(--bg-accent); border: 0.5px solid var(--border); border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; font-size: 12.5px; color: var(--text-accent); line-height: 1.55; }
+  .insight-banner.warn { background: var(--bg-warning); color: var(--text-warning); }
+  .insight-banner.success { background: var(--bg-success); color: var(--text-success); }
+  .insight-banner.danger { background: var(--bg-danger); color: var(--text-danger); }
+  .insight-label { font-size: 9.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; opacity: 0.75; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+  .chart-card { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 12px; padding: 16px; }
+  .chart-card.full { margin-bottom: 14px; }
+  .card-title { font-size: 12.5px; font-weight: 500; color: var(--text-primary); margin-bottom: 2px; }
+  .card-sub { font-size: 10.5px; color: var(--text-muted); margin-bottom: 12px; }
+  .card-take { font-size: 11.5px; color: var(--text-accent); background: var(--bg-accent); border-radius: 6px; padding: 7px 10px; margin-top: 10px; line-height: 1.5; }
+  .chart-wrap { position: relative; width: 100%; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--text-secondary); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .table-scroll { max-height: 560px; overflow-y: auto; border: 0.5px solid var(--border); border-radius: 12px; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .data-table thead th { position: sticky; top: 0; background: var(--surface-1); z-index: 2; text-align: right; color: var(--text-muted); font-weight: 500; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.4px; padding: 8px 10px; border-bottom: 1px solid var(--border-strong); white-space: nowrap; cursor: help; }
+  .data-table thead th:first-child { text-align: left; }
+  .data-table td { padding: 6px 10px; border-bottom: 0.5px solid var(--border); color: var(--text-secondary); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .data-table td:first-child { text-align: left; color: var(--text-primary); font-weight: 500; }
+  .data-table tr:hover td { background: var(--surface-1); }
+  .cell-neg { color: var(--text-danger) !important; font-weight: 500; background: var(--bg-danger); }
+  .cell-warn { color: var(--text-warning) !important; background: var(--bg-warning); }
+  .cell-pos { color: var(--text-success) !important; }
+  .row-flag { border-left: 2px solid var(--text-danger); }
+  .table-legend { display: flex; gap: 16px; font-size: 10.5px; color: var(--text-muted); margin: 8px 2px 14px; flex-wrap: wrap; }
+  .table-legend span { display: flex; align-items: center; gap: 5px; }
+  .dot-sq { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+  .funnel-steps { display: flex; flex-direction: column; gap: 0; }
+  .funnel-step { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .funnel-step:last-child { border-bottom: none; }
+  .f-label { width: 130px; font-size: 12px; color: var(--text-secondary); flex-shrink: 0; }
+  .f-bar-wrap { flex: 1; } .f-bar { height: 22px; border-radius: 4px; background: var(--plum); opacity: 0.88; transition: width 0.4s; display: flex; align-items: center; padding-left: 8px; }
+  .f-bar-val { font-size: 11px; font-weight: 500; color: white; white-space: nowrap; }
+  .f-meta { width: 100px; text-align: right; flex-shrink: 0; }
+  .f-pct { font-size: 12px; font-weight: 500; color: var(--text-primary); } .f-drop { font-size: 10px; color: var(--text-danger); } .f-drop.ok { color: var(--text-success); }
+  .data-stamp { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 11px; color: var(--text-secondary); background: var(--surface-1); border: 0.5px solid var(--border); border-radius: 8px; padding: 7px 12px; margin-bottom: 14px; line-height: 1.5; }
+  .data-stamp.is-snap { background: var(--bg-warning); color: var(--text-warning); border-color: transparent; }
+  .live-dot, .snap-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--text-success); }
+  .snap-dot { background: var(--text-warning); }
+  .snap-badge { display: inline-block; font-size: 9.5px; font-weight: 500; letter-spacing: .3px; text-transform: none; padding: 2px 8px; border-radius: 10px; background: var(--bg-warning); color: var(--text-warning); margin-left: 6px; vertical-align: middle; }
+  .st-sub { font-weight: 400; color: var(--text-muted); font-size: 11px; text-transform: none; letter-spacing: 0; }
+  .mom-table td:last-child { font-weight: 500; }
+  .mom-table thead th:last-child { color: var(--text-secondary); }
+  .mom-sub { display: block; font-size: 10px; color: var(--text-muted); font-weight: 400; }
+  .mom-i { color: var(--text-muted); cursor: help; font-weight: 400; }
+  .data-table td .sub { color: var(--text-muted); font-weight: 400; font-size: 10px; margin-left: 4px; }
+  .nav-fresh { width: 6px; height: 6px; border-radius: 50%; margin-left: auto; flex-shrink: 0; }
+  .nav-fresh.live { background: #3a8a6b; } .nav-fresh.snap { background: #d99a1b; }
+  .section-title { font-size: 11.5px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin: 22px 0 10px; }
+  .sprint-card { background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; display: flex; gap: 12px; }
+  .sprint-priority { width: 36px; height: 20px; border-radius: 4px; font-size: 10px; font-weight: 500; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+  .p0 { background: var(--bg-danger); color: var(--text-danger); } .p1 { background: var(--bg-warning); color: var(--text-warning); } .p2 { background: var(--bg-accent); color: var(--text-accent); }
+  .sprint-body { flex: 1; } .sprint-title { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 3px; }
+  .sprint-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+  .sprint-tags { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .tag { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: var(--surface-1); color: var(--text-muted); border: 0.5px solid var(--border); }
+  .gap-card { background: var(--surface-1); border: 1px dashed var(--border-strong); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+  .gap-title { font-size: 12.5px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .gap-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.55; }
+  .cross-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .cross-table th { background: var(--surface-1); padding: 7px 8px; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 500; text-align: right; border-bottom: 1px solid var(--border-strong); cursor: help; }
+  .cross-table th:first-child { text-align: left; }
+  .cross-table td { padding: 6px 8px; text-align: right; border-bottom: 0.5px solid var(--border); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .cross-table td:first-child { text-align: left; color: var(--text-primary); font-weight: 500; }
+  .heat-cell { border-radius: 4px; padding: 3px 8px; display: inline-block; min-width: 46px; cursor: help; }
+  .cro-matrix { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .cro-matrix th { background: var(--surface-1); padding: 8px; font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 500; text-align: left; border-bottom: 1px solid var(--border-strong); }
+  .cro-matrix td { padding: 9px 8px; border-bottom: 0.5px solid var(--border); vertical-align: top; }
+  .prio-pill { font-size: 10px; font-weight: 500; padding: 3px 9px; border-radius: 10px; display: inline-block; white-space: nowrap; }
+  .prio-high { background: var(--bg-danger); color: var(--text-danger); }
+  .prio-med { background: var(--bg-warning); color: var(--text-warning); }
+  .prio-low { background: var(--bg-success); color: var(--text-success); }
+  .explain-box { background: var(--surface-1); border-left: 3px solid var(--mustard); border-radius: 0 8px 8px 0; padding: 10px 14px; margin-bottom: 12px; font-size: 12px; color: var(--text-secondary); line-height: 1.55; }
+  .explain-box b { color: var(--text-primary); }
+  .highlight-chip { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.12s; font-size: 12.5px; color: var(--text-primary); border-bottom: 0.5px solid var(--border); }
+  .highlight-chip:last-child { border-bottom: none; }
+  .highlight-chip:hover { background: var(--surface-1); }
+  .highlight-chip .arrow { font-size: 13px; flex-shrink: 0; }
+  .highlight-chip .arrow.up { color: var(--text-success); }
+  .highlight-chip .arrow.down { color: var(--text-danger); }
+  .age-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; white-space: nowrap; flex-shrink: 0; margin-left: auto; letter-spacing: 0.2px; }
+  .age-new  { background: var(--bg-success);  color: var(--text-success); }
+  .age-fresh{ background: var(--bg-accent);   color: var(--text-accent); }
+  .age-warm { background: rgba(224,182,74,0.18); color: var(--mustard-dark); }
+  .age-stale{ background: var(--bg-danger);   color: var(--text-danger); }
+  .lens-toggle { display:inline-flex; gap:0; border:0.5px solid var(--border-strong); border-radius:7px; overflow:hidden; margin-bottom:10px; }
+  .lens-btn { padding:5px 12px; font-size:11.5px; font-family:inherit; background:var(--surface-1); color:var(--text-secondary); border:0; cursor:pointer; }
+  .lens-btn.on { background:var(--bg-accent); color:var(--text-accent); font-weight:600; }
+  .age-key { display:flex; gap:14px; flex-wrap:wrap; align-items:center; padding:8px 12px 10px; font-size:11px; color: var(--text-muted); border-bottom: 0.5px solid var(--border); }
+  .highlight-chip.is-new { box-shadow: inset 3px 0 0 var(--text-success); }
+  .highlight-chip .hl-text { flex: 1; }
+  .rank-bars { display: flex; flex-direction: column; gap: 2px; }
+  .rank-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+  .rank-label { width: 190px; flex-shrink: 0; font-size: 12px; color: var(--text-secondary); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rank-bar-wrap { flex: 1; background: var(--surface-1); border-radius: 3px; height: 20px; position: relative; }
+  .rank-bar-fill { height: 100%; border-radius: 3px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; min-width: 2px; }
+  .rank-bar-val { font-size: 11px; font-weight: 500; color: white; white-space: nowrap; }
+  .subtab-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border-strong); margin-bottom: 16px; }
+  .subtab-btn { padding: 9px 16px; font-size: 13px; color: var(--text-muted); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; font-weight: 500; }
+  .subtab-btn.active { color: var(--plum); border-bottom-color: var(--plum); }
+  .subtab-pane { display: none; }
+  .subtab-pane.active { display: block; }
+  .wow-table td.wow-pos { color: var(--text-success); font-weight: 500; }
+  .wow-table td.wow-neg { color: var(--text-danger); font-weight: 500; }
+  .rec { display: block; margin-top: 6px; font-weight: 500; }
+  .st-sub { font-weight: 400; color: var(--text-muted); font-size: 11px; text-transform: none; letter-spacing: 0; }
+  .data-stamp { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 11px; color: var(--text-secondary); background: var(--surface-1); border: 0.5px solid var(--border); border-radius: 8px; padding: 7px 12px; margin-bottom: 14px; line-height: 1.5; }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--text-success); }
+  .data-table td .sub { color: var(--text-muted); font-weight: 400; font-size: 10px; margin-left: 4px; }
+  .data-table tr.wk td { background: var(--surface-1); font-weight: 600; color: var(--text-primary); }
+  .data-table tr.ref td { background: var(--bg-accent); color: var(--text-accent); font-style: italic; }
+  .data-table tr.eve td { opacity: .65; }
+  .up { color: var(--text-success); } .dn { color: var(--text-danger); } .mu { color: var(--text-muted); }
+  .pill { display: inline-block; font-size: 9.5px; padding: 1px 7px; border-radius: 9px; background: var(--surface-1); color: var(--text-muted); margin-left: 6px; font-weight: 500; }
+  .pill.hot { background: var(--bg-success); color: var(--text-success); } .pill.cold { background: var(--bg-danger); color: var(--text-danger); } .pill.warn { background: var(--bg-warning); color: var(--text-warning); }
+  .table-scroll { overflow-x: auto; }
+  .sugg { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+  .sugg .chart-card h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .sugg .chart-card p { margin: 0; font-size: 12px; color: var(--text-secondary); line-height: 1.55; }
+  .back-link { display: block; padding: 10px 16px; font-size: 11.5px; color: var(--mustard); text-decoration: none; border-top: 1px solid rgba(255,255,255,0.1); }
+  @media (max-width: 760px) {
+    .app { flex-direction: column; height: auto; overflow: visible; }
+    .sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; }
+    .nav-section { padding: 6px; } .updated-badge { display: none; }
+    .topbar { padding: 0 16px; } .content { padding: 16px 16px 40px; }
+    .table-scroll { overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="brand-row"><div class="brand-mark">SC</div><div class="brand">Sleepycat</div></div>
+    <div class="brand-sub">Diwali sale 2026 · product analytics</div>
+  </div>
+  <div class="nav-section"><div class="nav-label">Sale</div>
+    <button class="nav-item active" onclick="showPage('pulse', this)"><span class="nav-icon">✺</span> Sale pulse</button>
+    <button class="nav-item" onclick="showPage('funnel', this)"><span class="nav-icon">▽</span> Full funnel — by week</button>
+    <button class="nav-item" onclick="showPage('orders', this)"><span class="nav-icon">₹</span> Orders, revenue & AOV</button>
+  </div>
+  <div class="nav-section"><div class="nav-label">What sells</div>
+    <button class="nav-item" onclick="showPage('products', this)"><span class="nav-icon">▤</span> Products & attach rate</button>
+    <button class="nav-item" onclick="showPage('geo', this)"><span class="nav-icon">⊕</span> Geography</button>
+  </div>
+  <div class="nav-section"><div class="nav-label">Traffic</div>
+    <button class="nav-item" onclick="showPage('landing', this)"><span class="nav-icon">◧</span> Landing pages</button>
+    <button class="nav-item" onclick="showPage('utm', this)"><span class="nav-icon">▲</span> UTM, campaigns & spend</button>
+  </div>
+  <div class="nav-section"><div class="nav-label">Next</div>
+    <button class="nav-item" onclick="showPage('next', this)"><span class="nav-icon">⚑</span> What else to track</button>
+  </div>
+  <a class="back-link" href="index.html">← Main dashboard</a>
+  <div class="updated-badge" id="sideBadge">—</div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="page-title">Sale pulse</div>
+    <div class="topbar-right"><span class="chip" id="topChip">—</span><span class="date-label" id="asOf">—</span></div>
+  </div>
+
+  <!-- PULSE -->
+  <div class="content active" id="page-pulse">
+    <div class="data-stamp" id="stamp"></div>
+    <div class="insight-banner success" id="pulseBanner"></div>
+    <div class="kpi-row" id="pulseKpis"></div>
+    <p class="section-title">Gross per day vs ₹80L target <span class="st-sub">· D2C online + stores · faded = before the sale</span></p>
+    <div class="chart-card full">
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:var(--plum)"></span>D2C online</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--mustard)"></span>Stores</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#c0392b;height:2px"></span>Target ₹80L</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#948572;height:2px"></span>BAU average</span>
+      </div>
+      <div class="chart-wrap" style="height:250px"><canvas id="pulseChart" role="img" aria-label="Daily gross revenue against target"></canvas></div>
+      <div class="card-take" id="pulseTake"></div>
+    </div>
+    <p class="section-title">Top landing pages by traffic <span class="st-sub">· sale days</span></p>
+    <div class="table-scroll"><table class="data-table"><thead><tr><th>Landing page</th><th>Sessions / day</th><th>Share</th><th>ATC %</th></tr></thead><tbody id="pulseLp"></tbody></table></div>
+    <p class="section-title">Uplift vs BAU <span class="st-sub">· per day, sale days vs BAU days</span></p>
+    <div class="table-scroll"><table class="data-table"><thead><tr><th>Metric</th><th>BAU / day</th><th>Sale / day</th><th>Uplift</th><th>Latest day</th></tr></thead><tbody id="upliftBody"></tbody></table></div>
+    <div class="card-sub" style="margin-top:6px" id="bauNote"></div>
+  </div>
+
+  <!-- FUNNEL -->
+  <div class="content" id="page-funnel">
+    <div class="kpi-row" id="funnelKpis"></div>
+    <p class="section-title">Day-wise funnel, clubbed by sale week <span class="st-sub">· sale weeks run Wed–Tue from Oct 7 · first row = BAU per day</span></p>
+    <div class="table-scroll" style="max-height:600px"><table class="data-table"><thead><tr><th>Day</th><th>Sessions</th><th>Add to cart</th><th>ATC %</th><th>Checkout % <span class="mu">GA4</span></th><th>Orders</th><th>Cart → order</th><th>CVR</th><th>CVR ex-prospecting</th><th>Bounce</th><th>vs BAU orders</th></tr></thead><tbody id="funnelBody"></tbody></table></div>
+    <div class="card-sub" style="margin-top:6px">Checkout % from GA4 (GoKwik checkouts aren't counted by Shopify). Ex-prospecting = without Google CPC and Facebook TOFU.</div>
+    <div class="grid-2" style="margin-top:14px">
+      <div class="chart-card"><div class="card-title">Sessions and CVR per day</div><div class="card-sub">Sep 1 onward · bars = sessions, line = CVR · sale days in plum</div><div class="chart-wrap" style="height:220px"><canvas id="funnelChart" role="img" aria-label="Sessions and CVR per day"></canvas></div><div class="card-take" id="funnelTake"></div></div>
+      <div class="chart-card"><div class="card-title">Where the funnel moved</div><div class="card-sub">Each step, sale vs BAU</div><div class="chart-wrap" style="height:220px"><canvas id="stepChart" role="img" aria-label="Funnel step rates sale vs BAU"></canvas></div><div class="card-take" id="stepTake"></div></div>
+    </div>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="content" id="page-orders">
+    <div class="kpi-row" id="ordKpis"></div>
+    <p class="section-title">Orders, revenue and AOV by day <span class="st-sub">· clubbed by sale week · first row = BAU per day</span></p>
+    <div class="table-scroll" style="max-height:560px"><table class="data-table"><thead><tr><th>Day</th><th>D2C orders</th><th>D2C ₹</th><th>D2C AOV</th><th>Store orders</th><th>Store ₹</th><th>Store AOV</th><th>Gross ₹</th><th>vs ₹80L</th><th>Coupon used</th><th>Revenue uplift</th></tr></thead><tbody id="ordBody"></tbody></table></div>
+    <div class="grid-2" style="margin-top:14px">
+      <div class="chart-card"><div class="card-title">Website orders by hour</div><div class="card-sub">Each sale day vs the BAU average hour</div><div class="chart-wrap" style="height:220px"><canvas id="hourChart" role="img" aria-label="Orders by hour"></canvas></div><div class="card-take" id="hourTake"></div></div>
+      <div class="chart-card"><div class="card-title">How customers paid (website)</div><div class="card-sub">Share of GoKwik orders · sale vs BAU</div><div class="chart-wrap" style="height:220px"><canvas id="payChart" role="img" aria-label="Payment mix"></canvas></div><div class="card-take" id="payTake"></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="chart-card"><div class="card-title">Coupon usage — % of website orders</div><div class="card-sub">Sale days vs BAU · one order can carry two codes</div>
+        <div class="table-scroll" style="max-height:300px;margin-top:8px"><table class="data-table"><thead><tr><th>Code</th><th>Orders</th><th>% of orders</th><th>BAU %</th><th>Discount ₹</th></tr></thead><tbody id="codeBody"></tbody></table></div>
+        <div class="card-take" id="codeTake"></div></div>
+      <div class="chart-card"><div class="card-title">New vs repeat customers</div><div class="card-sub">Website and stores · per day, sale vs BAU</div>
+        <div class="table-scroll" style="max-height:300px;margin-top:8px"><table class="data-table"><thead><tr><th>Channel</th><th>New / day</th><th>Repeat / day</th><th>Repeat share</th><th>BAU repeat share</th></tr></thead><tbody id="nrBody"></tbody></table></div>
+        <div class="card-take" id="nrTake"></div></div>
+    </div>
+  </div>
+
+  <!-- PRODUCTS -->
+  <div class="content" id="page-products">
+    <div class="kpi-row" id="attachKpis"></div>
+    <p class="section-title">Top sellers by revenue <span class="st-sub">· per sale day · website + stores</span></p>
+    <div class="table-scroll" style="max-height:520px"><table class="data-table"><thead><tr><th>Product</th><th>Group</th><th>Web orders / day</th><th>BAU / day</th><th>Uplift</th><th>Web ₹ / day</th><th>Store orders / day</th><th>Store ₹ / day</th><th>Share of sale ₹</th></tr></thead><tbody id="prodRevBody"></tbody></table></div>
+    <div class="grid-2" style="margin-top:14px">
+      <div class="chart-card"><div class="card-title">Top sellers by volume — website</div><div class="card-sub">Orders per sale day vs BAU per day</div><div class="chart-wrap" style="height:300px"><canvas id="volChart" role="img" aria-label="Top products by orders"></canvas></div><div class="card-take" id="volTake"></div></div>
+      <div class="chart-card"><div class="card-title">Revenue by product group</div><div class="card-sub">Share of sale revenue (website + stores) vs BAU</div><div class="chart-wrap" style="height:300px"><canvas id="grpChart" role="img" aria-label="Revenue by product group"></canvas></div><div class="card-take" id="grpTake"></div></div>
+    </div>
+    <p class="section-title">Accessories & bedding <span class="st-sub">· pillows, protectors, toppers, sheets & comforters, pillow cases · website</span></p>
+    <div class="table-scroll" style="max-height:420px"><table class="data-table"><thead><tr><th>Product</th><th>Group</th><th>Orders / day</th><th>BAU / day</th><th>Uplift</th><th>₹ / day</th><th>Share of accessory ₹</th></tr></thead><tbody id="accBody"></tbody></table></div>
+    <div class="chart-card full" style="margin-top:14px"><div class="card-title">Mattress attach rate by day</div><div class="card-sub">Share of website mattress orders that also carry an accessory · with and without pillows (the FREEPILLOW code adds a pillow to most mattress orders)</div><div class="chart-wrap" style="height:200px"><canvas id="attachChart" role="img" aria-label="Attach rate by day"></canvas></div><div class="card-take" id="attachTake"></div></div>
+  </div>
+
+  <!-- GEO -->
+  <div class="content" id="page-geo">
+    <div class="insight-banner" id="geoBanner"></div>
+    <p class="section-title">States <span class="st-sub">· website · per day, sale vs BAU · sessions from Shopify (IP location)</span></p>
+    <div class="table-scroll" style="max-height:520px"><table class="data-table"><thead><tr><th>State</th><th>Sessions / day</th><th>ATC %</th><th>Orders / day</th><th>BAU / day</th><th>Uplift</th><th>CVR</th><th>BAU CVR</th><th>₹ / day</th><th>Mattress share</th><th>Store orders / day</th></tr></thead><tbody id="stateBody"></tbody></table></div>
+    <div class="grid-2" style="margin-top:14px">
+      <div class="chart-card"><div class="card-title">Top states — website revenue per day</div><div class="card-sub">Sale vs BAU</div><div class="chart-wrap" style="height:300px"><canvas id="stateChart" role="img" aria-label="Revenue by state"></canvas></div></div>
+      <div class="chart-card"><div class="card-title">Cities — website orders</div><div class="card-sub">Delivery city from the order (district names) · per day</div>
+        <div class="table-scroll" style="max-height:300px;margin-top:8px"><table class="data-table"><thead><tr><th>City</th><th>Orders / day</th><th>BAU / day</th><th>Uplift</th><th>₹ / day</th><th>Mattress orders</th></tr></thead><tbody id="cityBody"></tbody></table></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="chart-card"><div class="card-title">Cities — sessions and add-to-cart</div><div class="card-sub">Shopify session city (IP-based) · per day</div>
+        <div class="table-scroll" style="max-height:300px;margin-top:8px"><table class="data-table"><thead><tr><th>City</th><th>Sessions / day</th><th>BAU / day</th><th>Uplift</th><th>ATC %</th><th>BAU ATC %</th></tr></thead><tbody id="citySessBody"></tbody></table></div></div>
+      <div class="chart-card"><div class="card-title">Devices</div><div class="card-sub">Sessions per day and add-to-cart rate</div>
+        <div class="table-scroll" style="max-height:300px;margin-top:8px"><table class="data-table"><thead><tr><th>Device</th><th>Sessions / day</th><th>BAU / day</th><th>Share</th><th>ATC %</th><th>BAU ATC %</th></tr></thead><tbody id="devBody"></tbody></table></div></div>
+    </div>
+  </div>
+
+  <!-- LANDING -->
+  <div class="content" id="page-landing">
+    <div class="chart-card full"><div class="card-title">Top 10 landing pages by traffic</div><div class="card-sub">Sessions per sale day vs BAU · label = add-to-cart rate</div><div class="chart-wrap" style="height:300px"><canvas id="lpChart" role="img" aria-label="Top landing pages by sessions"></canvas></div><div class="card-take" id="lpTake"></div></div>
+    <p class="section-title">Landing pages <span class="st-sub">· ranked by traffic · orders can't be tied to a landing page (GoKwik), so product pages show that product's orders</span></p>
+    <div class="table-scroll" style="max-height:560px"><table class="data-table"><thead><tr><th>Landing page</th><th>Sessions / day</th><th>Share</th><th>vs BAU</th><th>ATC %</th><th>BAU ATC %</th><th>Product orders / day</th></tr></thead><tbody id="lpBody"></tbody></table></div>
+  </div>
+
+  <!-- UTM -->
+  <div class="content" id="page-utm">
+    <div class="kpi-row" id="mktKpis"></div>
+    <p class="section-title">Sources (utm source / medium) <span class="st-sub">· website · per sale day vs BAU per day</span></p>
+    <div class="table-scroll" style="max-height:480px"><table class="data-table"><thead><tr><th>Source / medium</th><th>Sessions / day</th><th>Uplift</th><th>ATC %</th><th>Orders / day</th><th>BAU / day</th><th>Uplift</th><th>CVR</th><th>BAU CVR</th><th>₹ / day</th><th>Share of orders</th></tr></thead><tbody id="srcBody"></tbody></table></div>
+    <div class="chart-card full" style="margin-top:14px"><div class="card-title">Momentum — orders per day by source</div><div class="card-sub">Top sources, Sep 1 onward</div><div class="chart-wrap" style="height:260px"><canvas id="momChart" role="img" aria-label="Orders per day by source"></canvas></div><div class="card-take" id="momTake"></div></div>
+    <p class="section-title">Campaigns bringing orders <span class="st-sub">· sale days · website orders by utm campaign (Google = campaign ID mapped to name)</span></p>
+    <div class="table-scroll" style="max-height:480px"><table class="data-table"><thead><tr><th>Campaign</th><th>Orders</th><th>Revenue ₹</th><th>Sessions</th><th>CVR</th><th>Spend ₹</th><th>Revenue ÷ spend</th><th>BAU orders / day</th></tr></thead><tbody id="campBody"></tbody></table></div>
+    <div class="grid-2" style="margin-top:14px">
+      <div class="chart-card"><div class="card-title">Spend vs D2C revenue per day</div><div class="card-sub">Meta + Google spend (Amazon ads excluded) · bars = spend, line = D2C revenue</div><div class="chart-wrap" style="height:220px"><canvas id="spendChart" role="img" aria-label="Ad spend and revenue"></canvas></div><div class="card-take" id="spendTake"></div></div>
+      <div class="chart-card"><div class="card-title">Biggest spenders this sale</div><div class="card-sub">Platform-reported conversion value ÷ spend</div>
+        <div class="table-scroll" style="max-height:260px;margin-top:8px"><table class="data-table"><thead><tr><th>Campaign</th><th>Spend ₹</th><th>Platform ROAS</th></tr></thead><tbody id="spendBody"></tbody></table></div></div>
+    </div>
+  </div>
+
+  <!-- NEXT -->
+  <div class="content" id="page-next">
+    <p class="section-title">What else to track during the sale</p>
+    <div class="sugg" id="suggBox"></div>
+  </div>
+</div>
+</div>
+<script src="data/sale_data.js"></script>
+<script>
+const S = window.SC_SALE, M = S.meta;
+const $ = id => document.getElementById(id);
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const dt = iso => new Date(iso + 'T00:00:00');
+const fd = iso => { const d = dt(iso); return MON[d.getMonth()] + ' ' + d.getDate(); };
+const DOW = iso => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dt(iso).getDay()];
+const L = v => v == null ? '—' : '₹' + (v / 1e5).toFixed(v >= 1e7 ? 0 : 1) + 'L';
+const CR = v => v >= 1e7 ? '₹' + (v / 1e7).toFixed(2) + 'Cr' : L(v);
+const INR = v => v == null ? '—' : '₹' + Math.round(v).toLocaleString('en-IN');
+const N = (v, dp = 0) => v == null || isNaN(v) ? '—' : Number(v).toLocaleString('en-IN', { maximumFractionDigits: dp, minimumFractionDigits: dp });
+const P = (v, dp = 2) => v == null || !isFinite(v) ? '—' : v.toFixed(dp) + '%';
+const up = (a, b) => (b ? (a / b - 1) * 100 : null);
+const UP = v => v == null || !isFinite(v) ? '<span class="mu">new</span>' : `<span class="${v >= 0 ? 'up' : 'dn'}">${v >= 0 ? '+' : '−'}${Math.abs(v) >= 1000 ? (Math.abs(v) / 100 + 1).toFixed(0) + 'x' : Math.abs(v).toFixed(0) + '%'}</span>`;
+const PP = (a, b) => a == null || b == null ? '—' : `<span class="${a >= b ? 'up' : 'dn'}">${a >= b ? '+' : '−'}${Math.abs(a - b).toFixed(2)} pt</span>`;
+const sum = (arr, f) => arr.reduce((t, x) => t + (typeof f === 'function' ? f(x) : (x[f] || 0)), 0);
+
+const D = S.days, BAU = D.filter(d => d.per === 'BAU'), SALE = D.filter(d => d.per === 'SALE'), EVE = D.filter(d => d.per === 'EVE');
+const nB = BAU.length, nS = SALE.length, LAST = SALE[nS - 1] || D[D.length - 1];
+const per = (set, f) => set.length ? sum(set, f) / set.length : null;
+const gross = d => d.wr + d.sr;
+const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+const PLUM = isDark ? '#b08a5f' : '#6b4226', MUSTARD = isDark ? '#dcbb63' : '#e0b64a', GREY = '#948572', RED = '#c0392b';
+const gridColor = isDark ? '#332a1f' : '#e9e0cf', textMuted = '#948572', surface = isDark ? '#262019' : '#ffffff';
+const PAL = [PLUM, MUSTARD, '#3a8a6b', '#4f7cac', '#c0392b', '#8e6bb3', '#d07a3a', GREY];
+const baseOpts = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false, backgroundColor: surface, titleColor: isDark ? '#f3ede2' : '#2b2018', bodyColor: isDark ? '#cbbfa9' : '#5e5040', borderColor: gridColor, borderWidth: 1 } },
+  scales: { x: { grid: { color: gridColor }, ticks: { color: textMuted, font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } }, y: { grid: { color: gridColor }, ticks: { color: textMuted, font: { size: 11 } } } }
+};
+const legendOn = { display: true, position: 'bottom', labels: { color: textMuted, boxWidth: 10, font: { size: 11 } } };
+const kpi = (l, v, d, cls, flag) => `<div class="kpi-card${flag ? ' neg-flag' : ''}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-delta ${cls}">${d}</div></div>`;
+const cls = v => v == null ? 'neu' : v >= 0 ? 'pos' : 'neg';
+
+function showPage(id, btn) {
+  document.querySelectorAll('.content').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+  $('page-' + id).classList.add('active'); btn.classList.add('active');
+  $('page-title').textContent = btn.textContent.trim();
+}
+
+// ---------- shared funnel maths ----------
+function fun(set) {
+  const s = sum(set, 'sess'), a = sum(set, 'atc'), o = sum(set, 'wo'), gs = sum(set, x => x.gaS || 0), gc = sum(set, x => x.gaCk || 0);
+  const ps = sum(set, 'proS'), po = sum(set, 'proO'), n = set.length || 1;
+  return { n, s, a, o, sDay: s / n, oDay: o / n, rDay: sum(set, 'wr') / n, soDay: sum(set, 'so') / n, srDay: sum(set, 'sr') / n,
+    atcR: a / s * 100, ckR: gs ? gc / gs * 100 : null, c2o: o / a * 100, cvr: o / s * 100, cvrx: (o - po) / (s - ps) * 100,
+    bounce: sum(set, x => x.bounce * x.sess) / s, aov: sum(set, 'wr') / o, saov: sum(set, 'sr') / sum(set, 'so'),
+    m: sum(set, 'wm') / n, sm: sum(set, 'sm') / n, att: sum(set, 'wmAcc') / sum(set, 'wm') * 100, attXp: sum(set, 'wmAccXp') / sum(set, 'wm') * 100,
+    units: sum(set, 'wUnits') / o, gross: sum(set, gross) / n };
+}
+const FB = fun(BAU), FS = fun(SALE), FL = fun([LAST]);
+
+// ---------- header ----------
+$('topChip').textContent = nS ? `Sale day ${nS} of 45` : 'Sale starts Oct 8';
+$('asOf').textContent = 'data through ' + fd(M.through);
+$('sideBadge').innerHTML = `Data through ${fd(M.through)}<br>BAU = ${M.bauLabel}<br>Built ${fd(M.generated)}`;
+$('stamp').innerHTML = `<span class="live-dot"></span><b>Diwali sale</b> · launch eve ${fd(M.eve)}, full sale days from ${fd(M.start)} to ${fd(M.end)} · Diwali ${fd(M.diwali)} · ${nS} sale day${nS === 1 ? '' : 's'} so far · every "per day" figure compares sale days with BAU days`;
+$('bauNote').innerHTML = `BAU = ${M.bauLabel}. Sale = full sale days from ${fd(M.start)} (Oct 7 was the launch eve; the sale went live at midnight, so Oct 7 is shown in the day tables but not in sale averages).`;
+
+// ---------- PULSE ----------
+(function pulse() {
+  const tot = sum(SALE, gross), tgt = M.target * nS, left = 45 - nS;
+  const need = left ? (M.target * 45 - tot) / left : 0;
+  $('pulseBanner').className = 'insight-banner ' + (tot >= tgt ? 'success' : tot >= tgt * 0.8 ? 'warn' : 'danger');
+  const topP = S.products.slice(0, 3).map(p => p.p).join(', ');
+  const topSrc = S.sources[0];
+  $('pulseBanner').innerHTML = `<div class="insight-label">Sale pulse · ${nS} sale day${nS === 1 ? '' : 's'} · data through ${fd(M.through)}</div>
+    <b>${CR(tot)} gross</b> (${(tot / tgt * 100).toFixed(0)}% of the ₹80L-a-day target). Website <b>${N(FS.oDay)} orders a day</b> vs ${N(FB.oDay)} in BAU (${UP(up(FS.oDay, FB.oDay))}); stores ${N(FS.soDay)} a day vs ${N(FB.soDay)} (${UP(up(FS.soDay, FB.soDay))}).
+    Conversion ${FS.cvr >= FB.cvr + 0.03 ? 'rose' : FS.cvr <= FB.cvr - 0.03 ? 'fell' : 'held'} (${P(FB.cvr)} → <b>${P(FS.cvr)}</b>), so the extra orders came ${FS.cvr >= FB.cvr + 0.03 ? 'from both more traffic and better conversion' : 'from more traffic, not better conversion'}; AOV ${INR(FB.aov)} → <b>${INR(FS.aov)}</b>. Top revenue products: ${topP}. Biggest source of orders: ${topSrc.k.toLowerCase()} (${N(topSrc.sale[2])} a day).
+    ${left ? `<span class="rec">→ To end on ₹36Cr the remaining ${left} days need ${L(need)} a day.</span>` : ''}`;
+  $('pulseKpis').innerHTML = [
+    kpi('Sale gross to date', CR(tot), `${(tot / tgt * 100).toFixed(0)}% of target (${CR(tgt)})`, tot >= tgt ? 'pos' : 'neg', tot < tgt * 0.8),
+    kpi('Gross / day', L(FS.gross), `BAU ${L(FB.gross)} · ${UP(up(FS.gross, FB.gross))}`, cls(up(FS.gross, FB.gross))),
+    kpi('D2C orders / day', N(FS.oDay), `BAU ${N(FB.oDay)} · ${UP(up(FS.oDay, FB.oDay))}`, cls(up(FS.oDay, FB.oDay))),
+    kpi('D2C revenue / day', L(FS.rDay), `BAU ${L(FB.rDay)} · ${UP(up(FS.rDay, FB.rDay))}`, cls(up(FS.rDay, FB.rDay))),
+    kpi('D2C AOV', INR(FS.aov), `BAU ${INR(FB.aov)} · ${UP(up(FS.aov, FB.aov))}`, cls(up(FS.aov, FB.aov))),
+    kpi('CVR', P(FS.cvr), `BAU ${P(FB.cvr)} · ${PP(FS.cvr, FB.cvr)}`, cls(FS.cvr - FB.cvr)),
+    kpi('Store revenue / day', L(FS.srDay), `BAU ${L(FB.srDay)} · ${UP(up(FS.srDay, FB.srDay))}`, cls(up(FS.srDay, FB.srDay))),
+    kpi('Mattress orders / day', N(FS.m + FS.sm), `web ${N(FS.m)} + store ${N(FS.sm)} · BAU ${N(FB.m + FB.sm)}`, cls(up(FS.m + FS.sm, FB.m + FB.sm)))].join('');
+  const days = D.filter(d => d.d >= '2026-09-24');
+  new Chart($('pulseChart'), { data: { labels: days.map(d => fd(d.d)), datasets: [
+    { type: 'bar', label: 'D2C online', data: days.map(d => +(d.wr / 1e5).toFixed(1)), backgroundColor: days.map(d => d.per === 'SALE' ? PLUM : PLUM + '55'), stack: 'a' },
+    { type: 'bar', label: 'Stores', data: days.map(d => +(d.sr / 1e5).toFixed(1)), backgroundColor: days.map(d => d.per === 'SALE' ? MUSTARD : MUSTARD + '66'), stack: 'a' },
+    { type: 'line', label: 'Target', data: days.map(d => d.per === 'SALE' ? 80 : null), borderColor: RED, borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0, stack: 't' },
+    { type: 'line', label: 'BAU average', data: days.map(() => +(FB.gross / 1e5).toFixed(1)), borderColor: GREY, borderWidth: 1.2, pointRadius: 0, stack: 'b' }] },
+    options: { ...baseOpts, scales: { x: { ...baseOpts.scales.x, stacked: true }, y: { ...baseOpts.scales.y, stacked: true, suggestedMax: 100, ticks: { ...baseOpts.scales.y.ticks, callback: v => '₹' + v + 'L' } } } } });
+  const best = SALE.reduce((m, d) => gross(d) > gross(m) ? d : m, SALE[0] || LAST);
+  $('pulseTake').innerHTML = nS ? `Best sale day so far: ${fd(best.d)} at ${L(gross(best))} (${L(best.wr)} website + ${L(best.sr)} stores). The website and the stores are close to an even split of sale revenue, so plan stock and staffing for both.` : 'The sale has not started yet.';
+  const rows = [
+    ['Sessions', FB.sDay, FS.sDay, N, LAST.sess], ['Add-to-cart rate', FB.atcR, FS.atcR, P, LAST.atc / LAST.sess * 100, 1],
+    ['CVR (orders ÷ sessions)', FB.cvr, FS.cvr, P, LAST.wo / LAST.sess * 100, 1], ['CVR ex-prospecting', FB.cvrx, FS.cvrx, P, (LAST.wo - LAST.proO) / (LAST.sess - LAST.proS) * 100, 1],
+    ['D2C orders', FB.oDay, FS.oDay, N, LAST.wo], ['D2C revenue', FB.rDay, FS.rDay, L, LAST.wr], ['D2C AOV', FB.aov, FS.aov, INR, LAST.wr / LAST.wo],
+    ['Store orders', FB.soDay, FS.soDay, N, LAST.so], ['Store revenue', FB.srDay, FS.srDay, L, LAST.sr], ['Store AOV', FB.saov, FS.saov, INR, LAST.sr / LAST.so],
+    ['Gross (D2C + stores)', FB.gross, FS.gross, L, gross(LAST)], ['Mattress orders (web)', FB.m, FS.m, N, LAST.wm], ['Mattress orders (stores)', FB.sm, FS.sm, N, LAST.sm],
+    ['Attach rate — mattress + accessory (web)', FB.att, FS.att, P, LAST.wmAcc / LAST.wm * 100, 1],
+    ['Orders with a coupon (web)', sum(BAU, 'coded') / sum(BAU, 'wo') * 100, sum(SALE, 'coded') / sum(SALE, 'wo') * 100, P, LAST.coded / LAST.wo * 100, 1]];
+  $('upliftBody').innerHTML = rows.map(([k, b, s, f, l, isRate]) => `<tr><td>${k}</td><td>${f(b)}</td><td><b>${f(s)}</b></td><td>${isRate ? PP(s, b) : UP(up(s, b))}</td><td>${f(l)}</td></tr>`).join('');
+})();
+
+// ---------- day tables grouped by sale week ----------
+function weekRows(rowFn, refFn) {
+  const days = D.filter(d => d.per === 'SALE' || d.per === 'EVE');
+  const weeks = [...new Set(days.map(d => d.wk))].reverse();
+  let h = refFn();
+  weeks.forEach(w => {
+    const wd = days.filter(d => d.wk === w), sd = wd.filter(d => d.per === 'SALE');
+    const lab = `${w} · ${fd(wd[0].d)} – ${fd(wd[wd.length - 1].d)}${sd.length < 7 ? ` (${sd.length} sale day${sd.length === 1 ? '' : 's'})` : ''}`;
+    h += rowFn(lab, sd, 'wk');
+    wd.slice().reverse().forEach(d => { h += rowFn(`${fd(d.d)} <span class="sub">${DOW(d.d)}${d.per === 'EVE' ? ' · launch eve' : ''}</span>`, [d], d.per === 'EVE' ? 'eve' : ''); });
+  });
+  return h;
+}
+(function funnel() {
+  const r = (lab, set, c) => {
+    if (!set.length) return `<tr class="${c}"><td>${lab}</td><td colspan="10" class="mu">—</td></tr>`;
+    const F = fun(set), avg = set.length > 1 || c === 'ref';
+    return `<tr class="${c}"><td>${lab}</td><td>${N(F.sDay)}</td><td>${N(F.a / F.n)}</td><td>${P(F.atcR)}</td><td>${P(F.ckR)}</td><td>${N(F.oDay)}</td><td>${P(F.c2o)}</td><td><b>${P(F.cvr)}</b></td><td>${P(F.cvrx)}</td><td>${P(F.bounce, 1)}</td><td>${c === 'ref' ? '' : UP(up(F.oDay, FB.oDay))}</td></tr>`;
+  };
+  $('funnelBody').innerHTML = weekRows((l, s, c) => r(l + (c === 'wk' ? ' <span class="sub">per day</span>' : ''), s, c), () => r('BAU per day', BAU, 'ref'));
+  $('funnelKpis').innerHTML = [
+    kpi('Sessions / day', N(FS.sDay), `BAU ${N(FB.sDay)} · ${UP(up(FS.sDay, FB.sDay))}`, cls(up(FS.sDay, FB.sDay))),
+    kpi('Add-to-cart rate', P(FS.atcR), `BAU ${P(FB.atcR)} · ${PP(FS.atcR, FB.atcR)}`, cls(FS.atcR - FB.atcR)),
+    kpi('Checkout rate (GA4)', P(FS.ckR), `BAU ${P(FB.ckR)} · ${PP(FS.ckR, FB.ckR)}`, cls(FS.ckR - FB.ckR)),
+    kpi('Cart → order', P(FS.c2o), `BAU ${P(FB.c2o)} · ${PP(FS.c2o, FB.c2o)}`, cls(FS.c2o - FB.c2o)),
+    kpi('CVR', P(FS.cvr), `BAU ${P(FB.cvr)} · ${PP(FS.cvr, FB.cvr)}`, cls(FS.cvr - FB.cvr)),
+    kpi('CVR ex-prospecting', P(FS.cvrx), `BAU ${P(FB.cvrx)} · ${PP(FS.cvrx, FB.cvrx)}`, cls(FS.cvrx - FB.cvrx)),
+    kpi('Bounce rate', P(FS.bounce, 1), `BAU ${P(FB.bounce, 1)}`, FS.bounce <= FB.bounce ? 'pos' : 'neg')].join('');
+  new Chart($('funnelChart'), { data: { labels: D.map(d => fd(d.d)), datasets: [
+    { type: 'bar', label: 'Sessions', data: D.map(d => d.sess), backgroundColor: D.map(d => d.per === 'SALE' ? PLUM : d.per === 'X' ? GREY + '44' : PLUM + '44'), yAxisID: 'y' },
+    { type: 'line', label: 'CVR %', data: D.map(d => +(d.wo / d.sess * 100).toFixed(2)), borderColor: MUSTARD, backgroundColor: MUSTARD, borderWidth: 2, pointRadius: 1.5, yAxisID: 'y1' }] },
+    options: { ...baseOpts, scales: { x: baseOpts.scales.x, y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => v / 1000 + 'k' } }, y1: { position: 'right', grid: { display: false }, ticks: { color: textMuted, font: { size: 11 }, callback: v => v + '%' } } } } });
+  $('funnelTake').innerHTML = `Grey bars = Sep 22–30, the Google CPC surge (left out of BAU). Sale sessions ran ${UP(up(FS.sDay, FB.sDay))} vs BAU and CVR moved ${PP(FS.cvr, FB.cvr)}: ${FS.cvr >= FB.cvr + 0.03 ? 'the sale brought more traffic <i>and</i> converted it better.' : 'the sale multiplied traffic but did not lift conversion.'} Net of Google CPC and Facebook TOFU, CVR is ${P(FS.cvrx)} vs ${P(FB.cvrx)}: ${FS.cvrx < FB.cvrx ? 'the sale traffic now also includes large Facebook BOFU/PAID volumes that convert below 0.3%, which pulls this number down.' : 'the non-prospecting traffic converts better than usual.'}`;
+  const steps = [['Add to cart', FB.atcR, FS.atcR], ['Checkout (GA4)', FB.ckR, FS.ckR], ['Cart → order', FB.c2o, FS.c2o], ['CVR', FB.cvr, FS.cvr], ['CVR ex-prosp.', FB.cvrx, FS.cvrx]];
+  new Chart($('stepChart'), { type: 'bar', data: { labels: steps.map(s => s[0]), datasets: [
+    { label: 'BAU', data: steps.map(s => +s[1].toFixed(2)), backgroundColor: GREY + '99' }, { label: 'Sale', data: steps.map(s => +s[2].toFixed(2)), backgroundColor: PLUM }] },
+    options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: legendOn }, scales: { x: baseOpts.scales.x, y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => v + '%' } } } } });
+  const big = steps.slice().sort((a, b) => (b[2] - b[1]) / b[1] - (a[2] - a[1]) / a[1])[0];
+  $('stepTake').innerHTML = `The biggest relative gain is in <b>${big[0].toLowerCase()}</b> (${P(big[1])} → ${P(big[2])}). Checkout % is from GA4, so compare it with itself over time rather than with Shopify numbers.`;
+})();
+
+// ---------- ORDERS ----------
+(function orders() {
+  const r = (lab, set, c) => {
+    if (!set.length) return `<tr class="${c}"><td>${lab}</td><td colspan="10" class="mu">—</td></tr>`;
+    const n = set.length, wo = sum(set, 'wo') / n, wr = sum(set, 'wr') / n, so = sum(set, 'so') / n, sr = sum(set, 'sr') / n, g = wr + sr;
+    const vt = c === 'ref' || c === 'eve' ? '<span class="mu">—</span>' : `<span class="${g >= M.target ? 'up' : 'dn'}">${(g / M.target * 100).toFixed(0)}%</span>`;
+    return `<tr class="${c}"><td>${lab}</td><td>${N(wo)}</td><td>${L(wr)}</td><td>${INR(wr / wo)}</td><td>${N(so)}</td><td>${L(sr)}</td><td>${INR(sr / so)}</td><td><b>${L(g)}</b></td><td>${vt}</td><td>${P(sum(set, 'coded') / sum(set, 'wo') * 100, 0)}</td><td>${c === 'ref' ? '' : UP(up(g, FB.gross))}</td></tr>`;
+  };
+  $('ordBody').innerHTML = weekRows((l, s, c) => r(l + (c === 'wk' ? ' <span class="sub">per day</span>' : ''), s, c), () => r('BAU per day', BAU, 'ref'));
+  const canS = sum(SALE, 'canc') / (sum(SALE, 'wo') + sum(SALE, 'canc')) * 100, canB = sum(BAU, 'canc') / (sum(BAU, 'wo') + sum(BAU, 'canc')) * 100;
+  const discS = sum(SALE, 'disc') / (sum(SALE, 'wr') + sum(SALE, 'disc')) * 100, discB = sum(BAU, 'disc') / (sum(BAU, 'wr') + sum(BAU, 'disc')) * 100;
+  const codS = sum(SALE, 'coded') / sum(SALE, 'wo') * 100, codB = sum(BAU, 'coded') / sum(BAU, 'wo') * 100;
+  $('ordKpis').innerHTML = [
+    kpi('D2C orders / day', N(FS.oDay), `BAU ${N(FB.oDay)} · ${UP(up(FS.oDay, FB.oDay))}`, cls(up(FS.oDay, FB.oDay))),
+    kpi('D2C revenue / day', L(FS.rDay), `BAU ${L(FB.rDay)} · ${UP(up(FS.rDay, FB.rDay))}`, cls(up(FS.rDay, FB.rDay))),
+    kpi('D2C AOV', INR(FS.aov), `BAU ${INR(FB.aov)} · ${UP(up(FS.aov, FB.aov))}`, cls(up(FS.aov, FB.aov))),
+    kpi('Store AOV', INR(FS.saov), `BAU ${INR(FB.saov)} · ${UP(up(FS.saov, FB.saov))}`, cls(up(FS.saov, FB.saov))),
+    kpi('Items per D2C order', N(FS.units, 2), `BAU ${N(FB.units, 2)}`, cls(FS.units - FB.units)),
+    kpi('Discount depth (D2C)', P(discS, 1), `of pre-discount value · BAU ${P(discB, 1)}`, 'neu'),
+    kpi('Orders with a coupon', P(codS, 0), `website · BAU ${P(codB, 0)}`, 'neu'),
+    kpi('Cancelled (D2C)', P(canS, 1), `of orders placed · BAU ${P(canB, 1)}`, canS <= canB + 0.5 ? 'pos' : 'neg', canS > canB + 2)].join('');
+  const sd = SALE.length ? SALE : EVE;
+  new Chart($('hourChart'), { type: 'line', data: { labels: [...Array(24).keys()].map(h => (h < 10 ? '0' : '') + h + ':00'), datasets: [
+    { label: 'BAU avg', data: S.hourly.bau, borderColor: GREY, borderDash: [4, 3], borderWidth: 1.5, pointRadius: 0 },
+    ...sd.slice(-5).map((d, i) => ({ label: fd(d.d), data: S.hourly.days[d.d], borderColor: PAL[i % PAL.length], borderWidth: 2, pointRadius: 0, tension: 0.25 }))] },
+    options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: legendOn }, scales: { x: { ...baseOpts.scales.x, ticks: { ...baseOpts.scales.x.ticks, maxTicksLimit: 8 } }, y: baseOpts.scales.y } } });
+  const hl = S.hourly.days[LAST.d] || [], day = hl.slice(6), pk = 6 + day.indexOf(Math.max(...day));
+  $('hourTake').innerHTML = hl.length ? `${fd(LAST.d)}: ${hl[0]} orders landed in the first hour after midnight; the busiest daytime hour was ${pk}:00 (${hl[pk]} orders). Keep CX and payment monitoring staffed for the late-night and 11:00–14:00 peaks.` : '';
+  const keys = ['UPI', 'Cards', 'Pay later (Snapmint)', 'Card EMI', 'COD', 'Wallets & other'];
+  const mix = set => { const t = sum(set, d => sum(keys, k => d.pay[k] || 0)); return keys.map(k => sum(set, d => d.pay[k] || 0) / t * 100); };
+  const ms = mix(SALE), mb = mix(BAU);
+  new Chart($('payChart'), { type: 'bar', data: { labels: keys, datasets: [{ label: 'BAU', data: mb.map(v => +v.toFixed(1)), backgroundColor: GREY + '99' }, { label: 'Sale', data: ms.map(v => +v.toFixed(1)), backgroundColor: PLUM }] },
+    options: { ...baseOpts, indexAxis: 'y', plugins: { ...baseOpts.plugins, legend: legendOn }, scales: { x: { ...baseOpts.scales.x, ticks: { ...baseOpts.scales.x.ticks, callback: v => v + '%' } }, y: baseOpts.scales.y } } });
+  $('payTake').innerHTML = `Card EMI + pay-later = ${P(ms[2] + ms[3], 0)} of sale orders (BAU ${P(mb[2] + mb[3], 0)}). GoKwik orders only — Razorpay orders do not record the payment method (${N(sum(BAU, d => d.pay.Razorpay || 0) / nB)} a day in BAU, ${N(sum(SALE, d => d.pay.Razorpay || 0) / nS)} in the sale).`;
+  const woS = sum(SALE, 'wo'), woB = sum(BAU, 'wo') / nB;
+  $('codeBody').innerHTML = `<tr class="wk"><td>Any coupon</td><td>${N(sum(SALE, 'coded'))}</td><td>${P(codS, 0)}</td><td>${P(codB, 0)}</td><td>${INR(sum(SALE, 'disc'))}</td></tr>` +
+    S.codes.slice(0, 10).map(c => `<tr><td>${c.c}${c.oB === 0 ? '<span class="pill hot">new</span>' : ''}</td><td>${N(c.o)}</td><td>${P(c.o / woS * 100, 1)}</td><td>${P(c.oB / woB * 100, 1)}</td><td>${INR(c.disc)}</td></tr>`).join('');
+  const c0 = S.codes[0];
+  $('codeTake').innerHTML = c0 ? `${P(codS, 0)} of sale orders used a coupon (BAU ${P(codB, 0)}); ${c0.c} alone is on ${P(c0.o / woS * 100, 0)}.` : '';
+  const nr = (set, ch) => { const n = sum(set, ch + 'New'), r_ = sum(set, ch + 'Rep'); return [n / set.length, r_ / set.length, r_ / (n + r_) * 100]; };
+  const rows = [['Website', 'w'], ['Stores', 's']].map(([lab, ch]) => { const a = nr(SALE, ch), b = nr(BAU, ch); return `<tr><td>${lab}</td><td>${N(a[0])}</td><td>${N(a[1])}</td><td>${P(a[2], 1)}</td><td>${P(b[2], 1)}</td></tr>`; });
+  $('nrBody').innerHTML = rows.join('');
+  const w = nr(SALE, 'w'), wb = nr(BAU, 'w');
+  $('nrTake').innerHTML = `Repeat customers are ${P(w[2], 1)} of website sale orders (BAU ${P(wb[2], 1)}): ${w[2] > wb[2] ? 'the sale is pulling existing customers back — worth a CRM push to the rest of the base.' : 'the sale is mostly new customers; CRM/WhatsApp to past buyers is still under-used.'}`;
+})();
+
+// ---------- PRODUCTS ----------
+(function products() {
+  const PR = S.products, saleRev = sum(PR, p => p.sale[1] + p.sale[3]);
+  $('prodRevBody').innerHTML = PR.slice(0, 25).map(p => `<tr><td>${p.p}</td><td>${p.g}</td><td>${N(p.sale[0], 1)}</td><td>${N(p.bau[0], 1)}</td><td>${UP(up(p.sale[0], p.bau[0]))}</td><td>${L(p.sale[1])}</td><td>${N(p.sale[2], 1)}</td><td>${L(p.sale[3])}</td><td>${P((p.sale[1] + p.sale[3]) / saleRev * 100, 1)}</td></tr>`).join('');
+  const vol = PR.slice().sort((a, b) => b.sale[0] - a.sale[0]).slice(0, 12);
+  new Chart($('volChart'), { type: 'bar', data: { labels: vol.map(p => p.p.length > 26 ? p.p.slice(0, 25) + '…' : p.p), datasets: [{ label: 'BAU / day', data: vol.map(p => p.bau[0]), backgroundColor: GREY + '99' }, { label: 'Sale / day', data: vol.map(p => p.sale[0]), backgroundColor: PLUM }] },
+    options: { ...baseOpts, indexAxis: 'y', plugins: { ...baseOpts.plugins, legend: legendOn }, scales: { x: baseOpts.scales.x, y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, font: { size: 10 } } } } } });
+  const v0 = vol[0];
+  $('volTake').innerHTML = `By volume, <b>${v0.p}</b> leads at ${N(v0.sale[0])} website orders a day (BAU ${N(v0.bau[0], 1)}).` + (vol.some(p => p.p.includes('Fiber Lite')) ? ' Fiber Lite pillows jump because the FREEPILLOW code adds them to orders — read them as a gift, not demand.' : '');
+  const G = ['Mattress', 'Topper', 'Pillow', 'Protector', 'Bedding', 'Pillow case', 'Furniture', 'Pet', 'Ergo & other'];
+  const gs = G.map(g => sum(PR.filter(p => p.g === g), p => p.sale[1] + p.sale[3])), gb = G.map(g => sum(PR.filter(p => p.g === g), p => p.bau[1] + p.bau[3]));
+  const ts = sum(gs, x => x), tb = sum(gb, x => x);
+  new Chart($('grpChart'), { type: 'bar', data: { labels: G, datasets: [{ label: 'BAU share', data: gb.map(v => +(v / tb * 100).toFixed(1)), backgroundColor: GREY + '99' }, { label: 'Sale share', data: gs.map(v => +(v / ts * 100).toFixed(1)), backgroundColor: MUSTARD }] },
+    options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: legendOn }, scales: { x: { ...baseOpts.scales.x, ticks: { ...baseOpts.scales.x.ticks, autoSkip: false, font: { size: 10 } } }, y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => v + '%' } } } } });
+  $('grpTake').innerHTML = `Mattresses are ${P(gs[0] / ts * 100, 0)} of sale revenue (BAU ${P(gb[0] / tb * 100, 0)}). Accessories & bedding (toppers, pillows, protectors, sheets, cases): ${P((gs[1] + gs[2] + gs[3] + gs[4] + gs[5]) / ts * 100, 0)} (BAU ${P((gb[1] + gb[2] + gb[3] + gb[4] + gb[5]) / tb * 100, 0)}).`;
+  const ACC = ['Topper', 'Pillow', 'Protector', 'Bedding', 'Pillow case'];
+  const acc = PR.filter(p => ACC.includes(p.g)).sort((a, b) => b.sale[1] - a.sale[1]), accRev = sum(acc, p => p.sale[1]);
+  $('accBody').innerHTML = acc.slice(0, 25).map(p => `<tr><td>${p.p}</td><td>${p.g}</td><td>${N(p.sale[0], 1)}</td><td>${N(p.bau[0], 1)}</td><td>${UP(up(p.sale[0], p.bau[0]))}</td><td>${L(p.sale[1])}</td><td>${P(p.sale[1] / accRev * 100, 1)}</td></tr>`).join('');
+  const sAtt = sum(SALE, 'smAcc') / sum(SALE, 'sm') * 100, bAtt = sum(BAU, 'smAcc') / sum(BAU, 'sm') * 100;
+  const accOnlyS = sum(SALE, 'wAccOnly') / nS, accOnlyB = sum(BAU, 'wAccOnly') / nB;
+  $('attachKpis').innerHTML = [
+    kpi('Attach rate — web', P(FS.att, 1), `mattress orders with any accessory · BAU ${P(FB.att, 1)}`, cls(FS.att - FB.att)),
+    kpi('Attach ex-pillow — web', P(FS.attXp, 1), `protector / topper / bedding / case · BAU ${P(FB.attXp, 1)}`, cls(FS.attXp - FB.attXp)),
+    kpi('Attach rate — stores', P(sAtt, 1), `BAU ${P(bAtt, 1)}`, cls(sAtt - bAtt)),
+    kpi('Accessory-only orders / day', N(accOnlyS), `web · BAU ${N(accOnlyB)} · ${UP(up(accOnlyS, accOnlyB))}`, cls(up(accOnlyS, accOnlyB))),
+    kpi('Mattress orders / day', N(FS.m), `web · BAU ${N(FB.m)} · ${UP(up(FS.m, FB.m))}`, cls(up(FS.m, FB.m))),
+    kpi('Items per order', N(FS.units, 2), `web · BAU ${N(FB.units, 2)}`, cls(FS.units - FB.units))].join('');
+  const ad = D.filter(d => d.wm > 0);
+  new Chart($('attachChart'), { type: 'line', data: { labels: ad.map(d => fd(d.d)), datasets: [
+    { label: 'Any accessory', data: ad.map(d => +(d.wmAcc / d.wm * 100).toFixed(1)), borderColor: PLUM, borderWidth: 2, pointRadius: ad.map(d => d.per === 'SALE' ? 3 : 1) },
+    { label: 'Excluding pillows', data: ad.map(d => +(d.wmAccXp / d.wm * 100).toFixed(1)), borderColor: MUSTARD, borderWidth: 2, pointRadius: ad.map(d => d.per === 'SALE' ? 3 : 1) }] },
+    options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: legendOn }, scales: { x: baseOpts.scales.x, y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => v + '%' } } } } });
+  $('attachTake').innerHTML = `Attach rate on sale days ${P(FS.att, 0)} vs ${P(FB.att, 0)} BAU — most of the jump is the free pillow. The cleaner read is the ex-pillow line: ${P(FS.attXp, 0)} vs ${P(FB.attXp, 0)}. That is the number bundles (BUNDLE5, FREEPRO) should move.`;
+})();
+
+// ---------- GEO ----------
+(function geo() {
+  const ST = S.states;
+  $('stateBody').innerHTML = ST.slice(0, 25).map(s => {
+    const cvr = s.sessS ? s.sale[0] / s.sessS[0] * 100 : null, cvrB = s.sessB ? s.bau[0] / s.sessB[0] * 100 : null;
+    const flag = s.sessS && s.sale[0] > 10 && cvr > 3 ? '<span class="pill warn">check orders</span>' : '';
+    return `<tr><td>${s.s}${flag}</td><td>${s.sessS ? N(s.sessS[0]) : '—'}</td><td>${s.sessS ? P(s.sessS[1] / s.sessS[0] * 100, 1) : '—'}</td><td>${N(s.sale[0], 1)}</td><td>${N(s.bau[0], 1)}</td><td>${UP(up(s.sale[0], s.bau[0]))}</td><td>${P(cvr)}</td><td>${P(cvrB)}</td><td>${L(s.sale[1])}</td><td>${s.sale[0] ? P(s.sale[2] / s.sale[0] * 100, 0) : '—'}</td><td>${N(s.store[0], 1)}</td></tr>`;
+  }).join('');
+  const t10 = ST.slice(0, 10);
+  new Chart($('stateChart'), { type: 'bar', data: { labels: t10.map(s => s.s), datasets: [{ label: 'BAU / day', data: t10.map(s => +(s.bau[1] / 1e5).toFixed(2)), backgroundColor: GREY + '99' }, { label: 'Sale / day', data: t10.map(s => +(s.sale[1] / 1e5).toFixed(2)), backgroundColor: PLUM }] },
+    options: { ...baseOpts, indexAxis: 'y', plugins: { ...baseOpts.plugins, legend: legendOn }, scales: { x: { ...baseOpts.scales.x, ticks: { ...baseOpts.scales.x.ticks, callback: v => '₹' + v + 'L' } }, y: baseOpts.scales.y } } });
+  $('cityBody').innerHTML = S.cities.slice(0, 25).map(c => `<tr><td>${c.c} <span class="sub">${c.st}</span></td><td>${N(c.sale[0], 1)}</td><td>${N(c.bau[0], 1)}</td><td>${UP(up(c.sale[0], c.bau[0]))}</td><td>${L(c.sale[1])}</td><td>${N(c.sale[2])}</td></tr>`).join('');
+  $('citySessBody').innerHTML = S.citySess.slice(0, 25).map(c => `<tr><td>${c.c}</td><td>${N(c.sale[0])}</td><td>${c.bau ? N(c.bau[0]) : '—'}</td><td>${c.bau ? UP(up(c.sale[0], c.bau[0])) : '—'}</td><td>${P(c.sale[1] / c.sale[0] * 100, 1)}</td><td>${c.bau ? P(c.bau[1] / c.bau[0] * 100, 1) : '—'}</td></tr>`).join('');
+  const ds = sum(S.devices, d => d.sale[0]);
+  $('devBody').innerHTML = S.devices.map(d => `<tr><td>${d.k}</td><td>${N(d.sale[0])}</td><td>${N(d.bau[0])}</td><td>${P(d.sale[0] / ds * 100, 1)}</td><td>${P(d.sale[1] / d.sale[0] * 100, 1)}</td><td>${P(d.bau[1] / d.bau[0] * 100, 1)}</td></tr>`).join('');
+  const top = ST.slice(0, 3), sus = ST.filter(s => s.sessS && s.sale[0] > 10 && s.sale[0] / s.sessS[0] > 0.03);
+  const topShare = sum(top, s => s.sale[1]) / sum(ST, s => s.sale[1]) * 100;
+  $('geoBanner').innerHTML = `<div class="insight-label">Where the sale is landing</div>${top.map(s => `<b>${s.s}</b> ${L(s.sale[1])}/day (${UP(up(s.sale[0], s.bau[0]))} orders)`).join(' · ')} — together ${P(topShare, 0)} of website sale revenue.` +
+    (sus.length ? `<span class="rec">→ Check ${sus.map(s => s.s).join(', ')}: ${sus.map(s => `${N(s.sale[0])} orders/day on ${N(s.sessS[0])} sessions`).join('; ')} is a CVR far above every other state — confirm these are genuine retail orders, not bulk or reseller buys.</span>` : '');
+})();
+
+// ---------- LANDING ----------
+(function landing() {
+  const PG = S.pages, tot = sum(PG, p => p.sale[0]), ar = p => p.sale[1] / p.sale[0] * 100;
+  const nm = k => k === '/' ? 'Homepage' : k.replace('/products/', '').replace('/collections/', 'collection: ').replace('/pages/', 'page: ');
+  const t10 = PG.slice(0, 10);
+  new Chart($('lpChart'), { type: 'bar', data: { labels: t10.map(p => nm(p.k) + ' · ' + ar(p).toFixed(1) + '%'), datasets: [
+    { label: 'BAU / day', data: t10.map(p => p.bau ? p.bau[0] : 0), backgroundColor: GREY + '99' },
+    { label: 'Sale / day', data: t10.map(p => p.sale[0]), backgroundColor: t10.map(p => ar(p) < 1 ? RED : PLUM) }] },
+    options: { ...baseOpts, indexAxis: 'y', plugins: { ...baseOpts.plugins, legend: legendOn }, scales: { x: { ...baseOpts.scales.x, ticks: { ...baseOpts.scales.x.ticks, callback: v => v >= 1000 ? v / 1000 + 'k' : v } }, y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, font: { size: 10.5 } } } } } });
+  const cold = t10.filter(p => ar(p) < 1), coldS = sum(cold, p => p.sale[0]);
+  $('lpTake').innerHTML = `Top 10 pages take ${P(sum(t10, p => p.sale[0]) / tot * 100, 0)} of landing traffic. Red = under 1% add-to-cart: ${cold.map(p => nm(p.k)).join(', ')} (${P(coldS / tot * 100, 0)} of traffic, almost no shopping).`;
+  $('lpBody').innerHTML = PG.slice(0, 20).map((p, i) => `<tr><td><span class="mu">${i + 1}.</span> ${p.k}</td><td>${N(p.sale[0])}</td><td>${P(p.sale[0] / tot * 100, 1)}</td><td>${p.bau ? UP(up(p.sale[0], p.bau[0])) : '<span class="mu">new</span>'}</td><td class="${ar(p) < 1 ? 'dn' : ''}"><b>${P(ar(p), 1)}</b></td><td>${p.bau ? P(p.bau[1] / p.bau[0] * 100, 1) : '—'}</td><td>${p.pO != null ? N(p.pO, 1) + (p.pOb != null ? ` <span class="sub">BAU ${N(p.pOb, 1)}</span>` : '') : '—'}</td></tr>`).join('');
+  $('pulseLp').innerHTML = PG.slice(0, 5).map(p => `<tr><td>${p.k}</td><td>${N(p.sale[0])}</td><td>${P(p.sale[0] / tot * 100, 1)}</td><td class="${ar(p) < 1 ? 'dn' : ''}">${P(ar(p), 1)}</td></tr>`).join('');
+})();
+
+// ---------- UTM ----------
+(function utm() {
+  const SR = S.sources, tO = sum(SR, s => s.sale[2]);
+  $('srcBody').innerHTML = SR.map(s => { const b = s.bau || [0, 0, 0, 0]; return `<tr><td>${s.k.toLowerCase()}</td><td>${N(s.sale[0])}</td><td>${UP(up(s.sale[0], b[0]))}</td><td>${s.sale[0] ? P(s.sale[1] / s.sale[0] * 100, 1) : '—'}</td><td><b>${N(s.sale[2], 1)}</b></td><td>${N(b[2], 1)}</td><td>${UP(up(s.sale[2], b[2]))}</td><td>${s.sale[0] >= 100 ? P(s.sale[2] / s.sale[0] * 100) : '—'}</td><td>${b[0] >= 100 ? P(b[2] / b[0] * 100) : '—'}</td><td>${L(s.sale[3])}</td><td>${P(s.sale[2] / tO * 100, 1)}</td></tr>`; }).join('');
+  const SD = S.srcDaily, idx = SD.days.map((d, i) => d >= '2026-09-24' ? i : -1).filter(i => i >= 0);
+  new Chart($('momChart'), { type: 'line', data: { labels: idx.map(i => fd(SD.days[i])), datasets: SD.keys.map((k, j) => ({ label: k.toLowerCase(), data: idx.map(i => SD.v[k][i][0]), borderColor: PAL[j % PAL.length], backgroundColor: PAL[j % PAL.length], borderWidth: 2, pointRadius: 1.5, tension: 0.2 })) },
+    options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: legendOn }, scales: { x: baseOpts.scales.x, y: baseOpts.scales.y } } });
+  const mov = SR.filter(s => s.bau && s.bau[2] > 0.5).map(s => ({ k: s.k, add: s.sale[2] - s.bau[2], x: s.sale[2] / s.bau[2] })).sort((a, b) => b.add - a.add);
+  $('momTake').innerHTML = `Extra orders a day vs BAU: ${mov.slice(0, 4).map(m => `<b>${m.k.toLowerCase()}</b> +${N(m.add)} (${m.x.toFixed(1)}x)`).join(' · ')}. Facebook TOFU/BOFU send most of the sessions but convert at a fraction of Google CPC — judge Meta on orders, not traffic.`;
+  $('campBody').innerHTML = S.campaigns.slice(0, 25).map(c => `<tr><td>${c.c.length > 70 ? c.c.slice(0, 69) + '…' : c.c}${c.ch ? `<span class="sub">${c.ch.toLowerCase()}</span>` : ''}</td><td><b>${N(c.o)}</b></td><td>${L(c.r)}</td><td>${c.s ? N(c.s) : '—'}</td><td>${c.s ? P(c.o / c.s * 100) : '—'}</td><td>${c.sp ? INR(c.sp) : '—'}</td><td>${c.sp ? (c.r / c.sp).toFixed(1) + 'x' : '—'}</td><td>${N(c.oB, 1)}</td></tr>`).join('');
+  $('spendBody').innerHTML = (S.spendCamps || []).slice(0, 15).map(c => `<tr><td>${c.c.length > 60 ? c.c.slice(0, 59) + '…' : c.c}<span class="sub">${(c.ch || '').toLowerCase()}</span></td><td>${INR(c.sp)}</td><td class="${c.pv / c.sp < 1 ? 'dn' : ''}">${c.sp ? (c.pv / c.sp).toFixed(2) + 'x' : '—'}</td></tr>`).join('');
+  const sp = D.filter(d => d.d >= '2026-09-24');
+  new Chart($('spendChart'), { data: { labels: sp.map(d => fd(d.d)), datasets: [
+    { type: 'bar', label: 'Meta spend', data: sp.map(d => +(d.meta / 1e5).toFixed(2)), backgroundColor: '#4f7cac', stack: 's', yAxisID: 'y' },
+    { type: 'bar', label: 'Google spend', data: sp.map(d => +(d.google / 1e5).toFixed(2)), backgroundColor: '#3a8a6b', stack: 's', yAxisID: 'y' },
+    { type: 'line', label: 'D2C revenue', data: sp.map(d => +(d.wr / 1e5).toFixed(1)), borderColor: PLUM, borderWidth: 2, pointRadius: 1.5, yAxisID: 'y1' }] },
+    options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: legendOn }, scales: { x: { ...baseOpts.scales.x, stacked: true }, y: { ...baseOpts.scales.y, stacked: true, ticks: { ...baseOpts.scales.y.ticks, callback: v => '₹' + v + 'L' } }, y1: { position: 'right', grid: { display: false }, ticks: { color: textMuted, font: { size: 11 }, callback: v => '₹' + v + 'L' } } } } });
+  const spS = sum(SALE, d => d.meta + d.google), spB = sum(BAU, d => d.meta + d.google), merS = sum(SALE, 'wr') / spS, merB = sum(BAU, 'wr') / spB;
+  $('spendTake').innerHTML = `Sale: ${L(spS / nS)} a day on Meta + Google for ${L(FS.rDay)} of D2C revenue — <b>${merS.toFixed(1)}x</b> revenue per rupee of spend (BAU ${merB.toFixed(1)}x). Store revenue is on top of this and partly ad-driven too.`;
+  $('mktKpis').innerHTML = [
+    kpi('Ad spend / day', L(spS / nS), `Meta + Google · BAU ${L(spB / nB)} · ${UP(up(spS / nS, spB / nB))}`, 'neu'),
+    kpi('D2C revenue ÷ spend', merS.toFixed(1) + 'x', `BAU ${merB.toFixed(1)}x`, cls(merS - merB)),
+    kpi('Gross ÷ spend', (sum(SALE, gross) / spS).toFixed(1) + 'x', `incl. stores · BAU ${(sum(BAU, gross) / spB).toFixed(1)}x`, cls(sum(SALE, gross) / spS - sum(BAU, gross) / spB)),
+    kpi('Google CPC orders / day', N((SR.find(s => s.k === 'GOOGLE/CPC') || { sale: [0, 0, 0] }).sale[2]), `BAU ${N(((SR.find(s => s.k === 'GOOGLE/CPC') || {}).bau || [0, 0, 0])[2], 1)}`, 'pos'),
+    kpi('Meta orders / day', N(sum(SR.filter(s => s.k.startsWith('FACEBOOK/')), s => s.sale[2])), `tracked by UTM · BAU ${N(sum(SR.filter(s => s.k.startsWith('FACEBOOK/') && s.bau), s => s.bau[2]), 1)}`, 'neu')].join('');
+})();
+
+// ---------- NEXT ----------
+$('suggBox').innerHTML = [
+  ['Stock vs run-rate', 'Days of stock left for the top 20 SKUs at sale pace.'],
+  ['GoKwik abandoned carts', 'Recovery and payment failures for the ~99% of checkouts now on GoKwik.'],
+  ['Cancellations & returns by coupon', '7/14-day cancel and return rate for sale orders, by code.'],
+  ['Delivery lag', 'Order → dispatch → delivery days, by state.'],
+  ['CX load', 'Calls, chats and tickets per 100 orders, by reason.'],
+  ['Marketplaces', 'Amazon/Flipkart sale orders alongside D2C.']
+].map(([h, p]) => `<div class="chart-card"><h4>${h}</h4><p>${p}</p></div>`).join('');
+</script>
+</body>
+</html>

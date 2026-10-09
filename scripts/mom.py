@@ -318,3 +318,78 @@ def build(rows, sess_days, utm_month, through, refreshed):
     OUT['health'] = {'onlineRpd': per_day(R), 'posRpd': per_day(POS_R), 'onlineOpd': per_day(O), 'posOpd': per_day(POS_O)}
 
     return OUT
+
+
+# ---------------- retention + cart recovery (phone-keyed, see sleepycat-retention-scope-decision.md) ----------------
+_OWNED = """with w as (select right(regexp_replace(coalesce(nullif(PHONE,''), CUSTOMER:phone::string, SHIPPING_ADDRESS:phone::string, BILLING_ADDRESS:phone::string),'[^0-9]',''),10) p, date(convert_timezone('Asia/Kolkata',CREATED_AT)) d, 0 store
+  from SLEEPYCAT_DB.MAPLEMONK.SHOPIFY_ALL_ORDERS where SOURCE_NAME in ('256945782785','web','326345687041') and CANCELLED_AT is null and date(convert_timezone('Asia/Kolkata',CREATED_AT)) <= '{T}'),
+s1 as (select right(regexp_replace(coalesce(nullif(PHONE,''), CUSTOMER:phone::string, SHIPPING_ADDRESS:phone::string, BILLING_ADDRESS:phone::string),'[^0-9]',''),10) p, date(convert_timezone('Asia/Kolkata',CREATED_AT)) d, 1 store
+  from SLEEPYCAT_DB.MAPLEMONK.SHOPIFY_ALL_ORDERS where SOURCE_NAME='266308321281' and CANCELLED_AT is null and date(convert_timezone('Asia/Kolkata',CREATED_AT)) <= '{T}'),
+s2 as (select distinct right(regexp_replace(CONTACT_NUM,'[^0-9]',''),10) p, try_to_date(left(ORDER_DATE,10)) d, 1 store, ORDER_ID from SLEEPYCAT_DB.MAPLEMONK.SLEEPYCAT_DB_EASYECOM_FACT_ITEMS where upper(MARKETPLACE) in ('QUEUEBUSTER','OFFLINE') and try_to_date(left(ORDER_DATE,10)) <= '{T}'),
+o2 as (select p,d,store from (select p,d,store from w union all select p,d,store from s1 union all select p,d,store from s2) where length(p)=10 and p<>'9999999999' and d is not null),
+first as (select p, min(d) fd, min_by(store, d) fstore from o2 group by 1),
+coh as (select p, fd, date_trunc('month',fd) c from first where fstore=0)"""
+SQL['ret_cohort'] = _OWNED + """,
+x as (select coh.c, coh.p, datediff('month',coh.c,date_trunc('month',o2.d)) k, max(iff(o2.store=0,1,0)) web from o2 join coh on coh.p=o2.p where o2.d >= dateadd(day,3,coh.fd) group by 1,2,3)
+select to_char(c,'YYYY-MM') m, (select count(*) from coh c2 where c2.c=x.c) size, listagg(w, ',') within group (order by k) web, listagg(a, ',') within group (order by k) owned
+from (select c, k, sum(web) w, count(*) a from x group by 1,2) x where c >= '2025-08-01' group by c order by c"""
+SQL['ret_120'] = _OWNED + """,
+r as (select coh.p, coh.c, coh.fd, max(iff(o2.d between dateadd(day,3,coh.fd) and dateadd(day,120,coh.fd),1,0)) ra, max(iff(o2.store=0 and o2.d between dateadd(day,3,coh.fd) and dateadd(day,120,coh.fd),1,0)) rw from coh join o2 on o2.p=coh.p group by 1,2,3)
+select to_char(c,'YYYY-MM') m, count(*) n, sum(ra) ra, sum(rw) rw from r where c >= '2025-08-01' and dateadd(day,120,last_day(c)) <= '{T}' group by 1 order by 1"""
+SQL['ret_monthly'] = """with w as (select right(regexp_replace(coalesce(nullif(PHONE,''), CUSTOMER:phone::string, SHIPPING_ADDRESS:phone::string, BILLING_ADDRESS:phone::string),'[^0-9]',''),10) p, convert_timezone('UTC',CREATED_AT)::timestamp_ntz t
+  from SLEEPYCAT_DB.MAPLEMONK.SHOPIFY_ALL_ORDERS where SOURCE_NAME in ('256945782785','web','326345687041') and CANCELLED_AT is null),
+f as (select p, min(t) fwt from w where length(p)=10 and p<>'9999999999' group by 1)
+select to_char(convert_timezone('UTC','Asia/Kolkata',w.t),'YYYY-MM') m, count(*) orders, count_if(dateadd(day,3,f.fwt) <= w.t) rep3, count_if(date(f.fwt) < date(w.t)) repday
+from w left join f on f.p=w.p where convert_timezone('UTC','Asia/Kolkata',w.t)::date between '2025-08-01' and '{T}' group by 1 order by 1"""
+SQL['recovery'] = """with ck as (select ORDER_ID, min(to_timestamp(CREATED_AT)) t, max(AMOUNT)/100 amt, max(iff(STATUS in ('captured','refunded'),1,0)) paid, right(regexp_replace(max(CONTACT),'[^0-9]',''),10) p
+  from SLEEPYCAT_DB.MAPLEMONK.RAZORPAY_PAYMENTS where ORDER_ID is not null group by 1),
+ab as (select * from ck where paid=0 and length(p)=10 and p<>'9999999999' and convert_timezone('UTC','Asia/Kolkata',t)::date between '{S}' and '{T}'),
+so as (select right(regexp_replace(coalesce(nullif(PHONE,''), CUSTOMER:phone::string, SHIPPING_ADDRESS:phone::string, BILLING_ADDRESS:phone::string),'[^0-9]',''),10) p, convert_timezone('UTC', CREATED_AT)::timestamp_ntz t, TOTAL_PRICE::float v, SOURCE_NAME s
+  from SLEEPYCAT_DB.MAPLEMONK.SHOPIFY_ALL_ORDERS where CANCELLED_AT is null and SOURCE_NAME in ('256945782785','web','326345687041','266308321281')),
+rec as (select ab.ORDER_ID, min(so.t) rt, min_by(so.v, so.t) rv, min_by(so.s, so.t) rs from ab join so on so.p=ab.p and so.t > ab.t and so.t <= dateadd(day,14,ab.t) and so.s<>'266308321281' group by 1),
+prior as (select distinct ab.ORDER_ID from ab join so on so.p=ab.p and so.t < ab.t),
+x as (select ab.*, rec.rt, rec.rv, rec.rs, iff(prior.ORDER_ID is null,0,1) returning, datediff('minute', ab.t, rec.rt)/60 hrs from ab left join rec using(ORDER_ID) left join prior using(ORDER_ID))
+select to_char(convert_timezone('UTC','Asia/Kolkata', t),'YYYY-MM') m, count(*) abandoned, count(rt) recovered, round(sum(amt)) ab_value, round(sum(iff(rt is not null, rv,0))) rec_value,
+ count_if(hrs<1) h1, count_if(hrs>=1 and hrs<6) h6, count_if(hrs>=6 and hrs<24) h24, count_if(hrs>=24 and hrs<72) d3, count_if(hrs>=72 and hrs<168) d7, count_if(hrs>=168) d14,
+ count_if(rt is not null and abs(rv-amt)<=0.05*amt) same_v, count_if(rt is not null and rv<0.95*amt) less_v, count_if(rt is not null and rv>1.05*amt) more_v,
+ sum(returning) ret_ab, count_if(returning=1 and rt is not null) ret_rec, count_if(rs='326345687041') rec_gokwik,
+ count_if(amt>=15000) big_ab, count_if(amt>=15000 and rt is not null) big_rec, count_if(amt<5000) small_ab, count_if(amt<5000 and rt is not null) small_rec
+from x group by 1 order by 1"""
+
+def build_extra(rows, through):
+    """Retention (cohorts, monthly new vs repeat, 120-day) and cart recovery. through = last closed day."""
+    M, LAB, DAYS, p = window(through)
+    mi = {m: i for i, m in enumerate(M)}
+    lab = lambda m: calendar.month_abbr[int(m[5:])] + ' ' + m[2:4]
+    pad = lambda a: (a + [0] * 12)[:12]
+    CD, M1 = [], []
+    for m, size, web, own in rows['ret_cohort']:
+        size = int(size); w = [int(x) for x in str(web).split(',')]; o = [int(x) for x in str(own).split(',')]
+        y, mo = int(m[:4]), int(m[5:])
+        ready = (through.year - y) * 12 + (through.month - mo) + (1 if through.day == calendar.monthrange(through.year, through.month)[1] else 0)
+        CD.append({'m': lab(m), 'size': size, 'web': pad(w), 'owned': pad(o), 'ready': max(0, min(ready, 12))})
+        if ready >= 1: M1.append({'m': lab(m), 'web': round(w[0] / size * 100, 2), 'owned': round(o[0] / size * 100, 2)})
+    MR, RS = [], []
+    for m, orders, rep3, repday in rows['ret_monthly']:
+        o, r = int(orders), int(repday)
+        MR.append({'m': lab(m), 'new': o - r, 'repeat': r}); RS.append({'m': lab(m), 'pct': round(r / o * 100, 1), 'repeat': r})
+    R120 = [{'m': lab(m), 'n': int(n), 'all': int(ra), 'web': int(rw)} for m, n, ra, rw in rows['ret_120']]
+    z = lambda: [0, 0, 0, 0]
+    K = ['ab', 'rec', 'abv', 'recv', 'h1', 'h6', 'h24', 'd3', 'd7', 'd14', 'same', 'less', 'more', 'retab', 'retrec', 'recgk', 'bigab', 'bigrec', 'smab', 'smrec']
+    R = {k: z() for k in K}
+    for r in rows['recovery']:
+        if r[0] not in mi: continue
+        for k, v in zip(K, r[1:]): R[k][mi[r[0]]] = float(v or 0)
+    rate = lambda a, b: [R[a][i] / R[b][i] * 100 if R[b][i] else None for i in range(4)]
+    def row(k, v, fmt, d='vol', g=1, **kw):
+        x = {'k': k, 'v': v, 'f': fmt, 'd': d, 'g': g}; x.update(kw); return x
+    REC = {'table': [
+        row('Abandoned checkouts (unpaid)', R['ab'], 'int', g=-1, b=1), row('Recovered within 14 days', R['rec'], 'int'),
+        row('Recovery rate', rate('rec', 'ab'), 'pct1', 'rate', b=1),
+        row('Value left unpaid', R['abv'], 'L', g=-1), row('Value recovered', R['recv'], 'L'),
+        row('Recovery rate · carts ₹15k+', rate('bigrec', 'bigab'), 'pct1', 'rate'),
+        row('Recovery rate · carts under ₹5k', rate('smrec', 'smab'), 'pct1', 'rate'),
+        row('Recovery rate · returning customers', rate('retrec', 'retab'), 'pct1', 'rate'),
+        row('↳ recovered through GoKwik', R['recgk'], 'int', g=0)],
+        'raw': R}
+    return {'RET': {'CD': CD[::-1], 'M1': M1, 'MR': MR, 'RS': RS, 'R120': R120, 'through': through.isoformat()}, 'recovery': REC}

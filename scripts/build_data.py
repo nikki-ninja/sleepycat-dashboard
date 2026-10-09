@@ -16,6 +16,7 @@ import os, json, datetime, sys
 import snowflake.connector
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import mom   # month-on-month tabs
+import sale  # Diwali sale tab (Oct 8 – Nov 21, 2026)
 
 WINDOW_DAYS   = 75    # daily funnel table depth
 UTM_WEEKS     = 8     # weekly per-source table depth
@@ -246,8 +247,14 @@ def main():
         e['__ALL__'][0] += int(se); e['__ALL__'][1] += int(at or 0)
         if not k.endswith('/CHECKOUT'): e[k] = [int(se), int(at or 0)]
     MOM = mom.build(mrows, sess_days, utm_month, through, datetime.date.today().isoformat())
+    EXTRA = mom.build_extra(mrows, through)          # retention cohorts + cart recovery
+    MOM['recovery'] = EXTRA['recovery']
     # the order fact table must reconcile with the orders table month by month (asserted inside build too)
     assert sum(MOM['funnel']['table'][5]['v']) > 0
+
+    # Diwali sale tab: daily gross vs target and last year (aligned by days to Diwali)
+    data_through = datetime.date.fromisoformat(max(r["date"] for r in DAILY))
+    SALE = sale.build(DAILY, q(cur, sale.sql('sale_mix', data_through)), UTM_daily, data_through)
 
     cur.close(); cn.close()
 
@@ -255,7 +262,7 @@ def main():
     payload = {"generated_on": today, "as_of": today,
                "as_of_data": max(r["date"] for r in DAILY),
                "DAILY": DAILY, "UTM": {"daily": UTM_daily, "weekly": UTM_weekly, "minSess": MIN_SESS},
-               "TOFU": TOFU, "CK_WEEKLY": CK, "SRC_CVR": SRC, "MOM": MOM}
+               "TOFU": TOFU, "CK_WEEKLY": CK, "SRC_CVR": SRC, "MOM": MOM, "RET": EXTRA["RET"], "SALE": SALE}
 
     blob = json.dumps(payload, separators=(',', ':'))
     with open('data/data.js', 'w') as f:

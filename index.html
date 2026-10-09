@@ -192,6 +192,9 @@
     <div class="brand-row"><div class="brand-mark">SC</div><div class="brand">Sleepycat</div></div>
     <div class="brand-sub">Product Analytics · D2C + Store</div>
   </div>
+  <div class="nav-section"><div class="nav-label">Campaign</div>
+    <button class="nav-item" onclick="showPage('sale', this)"><span class="nav-icon">✺</span> Diwali sale <span style="font-size:9px;opacity:.6">· new</span></button>
+  </div>
   <div class="nav-section"><div class="nav-label">Overview</div>
     <button class="nav-item active" onclick="showPage('daily', this)"><span class="nav-icon">◆</span> Daily funnel table</button>
     <button class="nav-item" onclick="showPage('healthdash', this)"><span class="nav-icon">◈</span> Health dashboard</button>
@@ -219,6 +222,7 @@
     <button class="nav-item" onclick="showPage('competitor', this)"><span class="nav-icon">◫</span> Competitor analysis (draft)</button>
     <button class="nav-item" onclick="showPage('roadmap', this)"><span class="nav-icon">⚑</span> Roadmap signals</button>
   </div>
+  <a class="site-link" href="sale.html" style="color:var(--mustard)">✺ Diwali sale dashboard →</a>
   <a class="site-link" href="https://sleepycat.in" target="_blank">↗ sleepycat.in</a>
   <div class="updated-badge">Shopify sessions/ATC/orders: daily<br>GA4 + Razorpay: live sync<br><span id="lastPull">—</span></div>
 </nav>
@@ -239,13 +243,13 @@
       <div id="highlightsStrip"></div>
     </div>
 
-    <div class="insight-banner warn">
-      <div class="insight-label">What changed — Oct 5, 2026 · data through Oct 4 · the Google CPC surge is over</div>
-      <b>1 · Google CPC switched off on Sep 30.</b> 205,768 sessions on Sep 29 → 55,599 on Sep 30 → ~5,300–5,700 a day Oct 1–4, back to its pre-surge level. Its orders never moved: ~40–70 a day before, during and after. <b>Sep 24–30: ~945,000 extra sessions, no extra orders.</b>
-      <br><b>2 · Site conversion is back where it was.</b> Blended CVR 0.38–0.50% Oct 1–4 (vs 0.06–0.08% in the surge). Net of Google CPC and Facebook TOFU: 0.79–1.12% on ~11k sessions a day — the same level as Sep 20–25. This confirms the Sep 26–29 dip was untagged surge traffic, not the site.
-      <br><b>3 · September closed at 5,480 D2C orders and ₹3.98Cr</b> — 183 orders a day vs 218 in August (−16%). Mattress orders 54 a day vs 85 (−36%). The month tabs now show full Jun–Sep; October joins them from Oct 7.
-      <br><b>4 · Stores had a pillow day on Oct 4:</b> 822 POS orders (normal ~130–250) at ₹6,318 AOV across 50 stores — pillows at 5–15x their usual daily count. Looks like an in-store pillow push; confirm with retail.
-      <span class="rec">→ Still worth asking the Google Ads owner what the Sep 22–30 campaigns cost, since they bought no orders.</span>
+    <div class="insight-banner success">
+      <div class="insight-label">What changed — Oct 9, 2026 · data through Oct 8 · Diwali sale day 1</div>
+      <b>1 · Sale day 1 (Oct 8): ₹1.30Cr gross — 163% of the ₹80L target.</b> D2C: 746 orders, ₹66.4L (4.5x the ~166 a day before the sale). Stores: 317 orders, ₹63.8L, at ₹20.1k AOV.
+      <br><b>2 · Mattresses led.</b> 361 website + 207 store mattress orders, against ~55 website mattress orders a day before the sale. D2C AOV rose to ₹8,907.
+      <br><b>3 · Google CPC did the heavy lifting:</b> 257 orders on 16,354 sessions (1.57% CVR), against ~55 a day before. Facebook BOFU sent 44,670 sessions for 83 orders, and WhatsApp campaigns 41.
+      <br><b>4 · The sale went live at midnight:</b> 61 website orders between 00:00 and 01:00, then peaks at 11:00 (59) and 13:00 (54). Oct 7 itself was a normal day (169 orders).
+      <span class="rec">→ Full sale analytics: see the new <a href="sale.html" style="color:inherit;text-decoration:underline">Diwali sale dashboard</a>. Month tabs now show Jul – Oct (Oct to date, sale included).</span>
     </div>
     <div class="insight-banner">
       ATC→Order % = orders÷ATC×100. CVR = orders÷sessions×100. D2C orders = Shopify app IDs <code>256945782785</code> + <code>web</code> + <code>326345687041</code> (GoKwik), not cancelled.
@@ -371,8 +375,8 @@
   <!-- HEALTH DASHBOARD -->
   <div class="content" id="page-healthdash">
     <div class="insight-banner warn">
-      <div class="insight-label">Refreshed — Oct 5, 2026 — data through Oct 4</div>
-      Oct 4: 46,522 sessions, 2,398 ATC, <b>197 D2C online orders</b> (94 Razorpay + 103 GoKwik), ₹13.61L revenue, <b>CVR 0.42%</b> — normal traffic again now the Google CPC surge has ended. POS: <b>822 orders, ₹51.94L</b> — an in-store pillow day. October to date (4 days): 752 D2C orders / ₹55.2L. September closed at 5,480 orders / ₹3.98Cr.</div>
+      <div class="insight-label">Refreshed — Oct 9, 2026 — data through Oct 8</div>
+      Oct 8 (Diwali sale day 1): 138,453 sessions, 8,463 ATC, <b>746 D2C online orders</b> (7 Razorpay + 739 GoKwik), ₹66.45L revenue, <b>CVR 0.54%</b>. POS: <b>317 orders, ₹63.84L</b>. Gross D2C + stores ₹1.30Cr against the ₹80L-a-day target. October to date (8 days): 1,990 D2C orders / ₹1.60Cr.</div>
     <div class="insight-banner">
       Sleepycat sells through the D2C website and physical stores (POS) — shown separately below, and combined in the weekly table further down.
     </div>
@@ -387,10 +391,10 @@
 
     <p class="section-title">Store (physical retail) — today's KPIs</p>
     <div class="kpi-row">
-      <div class="kpi-card"><div class="kpi-label">Store orders (Oct 4)</div><div class="kpi-value">822</div><div class="kpi-delta pos">↑ 3.9x Oct 3 (211)</div></div>
-      <div class="kpi-card"><div class="kpi-label">Store revenue</div><div class="kpi-value">₹51.94L</div><div class="kpi-delta pos">↑ +60.1% vs Oct 3</div></div>
-      <div class="kpi-card neg-flag"><div class="kpi-label">Store AOV</div><div class="kpi-value">₹6,318</div><div class="kpi-delta neg">↓ −58.9% vs Oct 3 (₹15,375) — pillow-led day</div></div>
-      <div class="kpi-card"><div class="kpi-label">Store AOV vs D2C AOV</div><div class="kpi-value">−8.6%</div><div class="kpi-delta neu">Oct 4: ₹6,318 vs D2C ₹6,910</div></div></div>
+      <div class="kpi-card"><div class="kpi-label">Store orders (Oct 8)</div><div class="kpi-value">317</div><div class="kpi-delta pos">↑ 4.2x Oct 7 (75) · sale day 1</div></div>
+      <div class="kpi-card"><div class="kpi-label">Store revenue</div><div class="kpi-value">₹63.84L</div><div class="kpi-delta pos">↑ 7.2x Oct 7 (₹8.89L)</div></div>
+      <div class="kpi-card"><div class="kpi-label">Store AOV</div><div class="kpi-value">₹20,137</div><div class="kpi-delta pos">↑ +69.9% vs Oct 7 (₹11,855)</div></div>
+      <div class="kpi-card"><div class="kpi-label">Store AOV vs D2C AOV</div><div class="kpi-value">+126.1%</div><div class="kpi-delta neu">Oct 8: ₹20,137 vs D2C ₹8,907</div></div></div>
 
     <p class="section-title">Daily — Online vs POS, last 14 days</p>
     <div class="insight-banner warn" style="margin-bottom:10px">Methodology, now consistent across every row: <b>D2C online</b> = Shopify <code>SOURCE_NAME</code> in <code>256945782785</code> (Razorpay checkout), <code>web</code>, and <code>326345687041</code> (GoKwik, live since Aug 22) — not cancelled. <b>POS</b> = <code>SOURCE_NAME 266308321281</code>, which is identical to the "order name starts POS-" filter from June onward (verified row-by-row). The earlier build mixed two POS definitions across the Aug 20/21 boundary; that is gone. Every figure below is one query, one definition.</div>
@@ -424,9 +428,9 @@
 
     <p class="section-title">D2C vs store — side by side</p>
     <div class="chart-card full">
-      <div class="card-title">Orders comparison — Oct 4</div><div class="card-sub">Two separate channels, shown together for scale comparison only</div>
+      <div class="card-title">Orders comparison — Oct 8</div><div class="card-sub">Two separate channels, shown together for scale comparison only</div>
       <div class="chart-wrap" style="height:140px"><canvas id="channelChart" role="img" aria-label="Comparison of D2C online and store orders"></canvas></div>
-      <div class="card-take">Stores did 822 orders on Oct 4, four times the website's 197 — almost all pillows, so revenue per store order was below the website's for once. D2C includes 103 GoKwik orders, 52% of the day.</div>
+      <div class="card-take">Sale day 1: the website did 746 orders and the stores 317, but revenue was almost level (₹66.4L vs ₹63.8L) because stores sell bigger baskets. 739 of the 746 D2C orders went through GoKwik.</div>
     </div>
   </div>
 
@@ -628,7 +632,7 @@
   <!-- RETENTION & COHORTS (new) -->
   <!-- RETENTION & COHORTS (new) -->
   <div class="content" id="page-retention">
-    <div class="data-stamp" data-text="<b>Monthly cohorts</b> · Aug 2025 – Sep 2026 · September closed and final · rebuilt at every month close (owned-channel recipe, phone-matched)"></div>
+    <div class="data-stamp" data-text="<b>Monthly cohorts</b> · Aug 2025 – Oct 2026 · September closed and final; October is month to date (Oct 1–8) · owned-channel recipe, phone-matched"></div>
     <div class="insight-banner">
       <div class="insight-label">Scope — owned channels: sleepycat.in + Shopify POS + QueueBuster + offline stores</div>
       Customers matched on <b>phone number</b>, not Shopify customer ID — that was the bug: Shopify IDs never link web and store, so web-only retention looked like the whole picture. Marketplaces stay out because they cannot be measured: Amazon and Flipkart mask the buyer phone, ~180k of 357k annual orders carry no identity. Toggle the table below to switch lens.
@@ -649,16 +653,16 @@
       <button class="lens-btn on" onclick="setCohortLens('owned', this)">Website + stores</button>
       <button class="lens-btn" onclick="setCohortLens('web', this)">Website only</button>
     </div>
-    <div class="card-sub" style="margin-bottom:10px">Rows = month of first purchase on sleepycat.in. Cells = % of that cohort who bought again in month N. Customers matched on phone number across web and stores. <i>*</i> = month still in progress. September is now closed and final.</div>
+    <div class="card-sub" style="margin-bottom:10px">Rows = month of first purchase on sleepycat.in. Cells = % of that cohort who bought again in month N. Customers matched on phone number across web and stores. <i>*</i> = month still in progress (October, Oct 1–8). September is closed and final.</div>
     <div class="table-scroll" style="max-height:460px">
       <table class="data-table" id="cohortHeatmapTable">
         <thead><tr><th>Cohort</th><th>Size</th><th>M1</th><th>M2</th><th>M3</th><th>M4</th><th>M5</th><th>M6</th><th>M7</th><th>M8</th><th>M9</th><th>M10</th><th>M11</th><th>M12</th></tr></thead>
         <tbody id="cohortHeatmapBody"></tbody>
       </table>
     </div>
-    <div class="card-take"><b>Store is where repeat happens.</b> On the combined lens M1 runs 5–8% and M2 6–9%; on website-only both roughly third. Same customers, same months — the difference is purely where they bought. Web-only M1 is flat across all 14 cohorts, so the website itself is not deteriorating; it was never carrying much repeat to begin with. Jan 2026 is the strongest cohort on both lenses.</div>
+    <div class="card-take"><b>Store is where repeat happens.</b> On the combined lens M1 runs 5–8% and M2 6–9%; on website-only both roughly third. Same customers, same months — the difference is purely where they bought. Web-only M1 is flat across every cohort, so the website itself is not deteriorating; it was never carrying much repeat to begin with. Jan 2026 is the strongest cohort on both lenses.</div>
 
-    <p class="section-title">Month-on-month new vs repeat — <b>D2C orders</b>, Aug 2025 – Sep 2026</p>
+    <p class="section-title">Month-on-month new vs repeat — <b>D2C orders</b>, Aug 2025 – Oct 2026 (Oct to date)</p>
     <div class="chart-card full">
       <div class="legend"><span class="legend-item"><span class="legend-dot" style="background:#6b4226"></span>New customer D2C orders</span><span class="legend-item"><span class="legend-dot" style="background:#e0b64a"></span>Repeat D2C orders</span></div>
       <div class="chart-wrap" style="height:240px"><canvas id="momRepeatChart" role="img" aria-label="Stacked bar chart of monthly new vs repeat orders"></canvas></div>
@@ -1024,6 +1028,42 @@
   </div>
 
   <!-- ANOMALY LOG -->
+  <!-- DIWALI SALE -->
+  <div class="content" id="page-sale">
+    <div class="data-stamp" id="saleStamp"></div>
+    <div class="insight-banner" id="saleBanner"></div>
+    <div class="explain-box">Full sale analytics — funnel by sale week, products & attach rate, geography, landing pages, UTM/campaigns, hourly and discount codes: <a href="sale.html"><b>open the Diwali sale dashboard →</b></a></div>
+    <div class="kpi-row" id="saleKpis"></div>
+
+    <p class="section-title">Gross per day vs ₹80L target <span class="st-sub">· D2C online + stores · grey line = last year, same days to Diwali</span></p>
+    <div class="chart-card full">
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:var(--plum)"></span>D2C online</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--mustard)"></span>Stores</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--text-danger);height:2px"></span>Target ₹80L</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#948572;height:2px"></span>Last year (D2C + stores)</span>
+      </div>
+      <div class="chart-wrap" style="height:260px"><canvas id="saleDailyChart" role="img" aria-label="Daily gross revenue during the Diwali sale against target and last year"></canvas></div>
+      <div class="card-take" id="saleDailyTake"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="chart-card"><div class="card-title">Cumulative gross vs target</div><div class="card-sub">Sale days only · target ₹80L × days elapsed</div>
+        <div class="chart-wrap" style="height:210px"><canvas id="saleCumChart" role="img" aria-label="Cumulative sale revenue against target and last year"></canvas></div>
+        <div class="card-take" id="saleCumTake"></div></div>
+      <div class="chart-card"><div class="card-title">Website — sessions and conversion per day</div><div class="card-sub">Bars = sessions · line = CVR (orders ÷ sessions)</div>
+        <div class="chart-wrap" style="height:210px"><canvas id="saleFunnelChart" role="img" aria-label="Website sessions and conversion rate per day"></canvas></div>
+        <div class="card-take" id="saleFunnelTake"></div></div>
+    </div>
+
+    <p class="section-title">Day by day <span class="st-sub">· most recent first · pre-sale days shaded</span></p>
+    <div class="table-scroll" style="max-height:520px">
+      <table class="data-table"><thead><tr><th>Date</th><th>To Diwali</th><th>D2C orders</th><th>D2C ₹</th><th>Store orders</th><th>Store ₹</th><th>Gross ₹</th><th>vs ₹80L</th><th>Last year ₹</th><th>vs LY</th><th>Mattress orders</th><th>Web CVR</th></tr></thead>
+      <tbody id="saleBody"></tbody></table>
+    </div>
+    <div class="card-sub" style="margin-top:6px">Gross = order value incl. tax, D2C online (website + GoKwik) and stores (Shopify POS), cancelled orders excluded — the same definitions as the Daily and Health tabs. Last year = the 2025 date with the same number of days to Diwali (Diwali 2025 was Oct 20, so Oct 8, 2026 ↔ Sep 19, 2025); last year's store sales come from EasyEcom (QueueBuster POS), as stores were not on Shopify POS then.</div>
+  </div>
+
   <div class="content" id="page-anomalylog">
     <p class="section-title">Detection algorithm</p>
     <div class="explain-box">
@@ -1198,7 +1238,7 @@ function showPage(id, btn) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   btn.classList.add('active');
-  const titles = { daily:'Daily funnel table', healthdash:'Health dashboard', anomalylog:'Anomaly log', funnel:'Funnel & checkout', ga4cro:'GA4 & CRO diagnostics', payments:'Payment health', microfunnel:'Micro-funnel backlog', behaviour:'Cart recovery', cohorts:'New vs returning', retention:'Retention & cohorts — web + stores', crosssell:'Cross-sell & basket', products:'Product mix', geo:'State x product', ads:'Meta ads', competitor:'Competitor analysis (draft)', roadmap:'Roadmap signals', sku:'SKU & category deep dive' };
+  const titles = { daily:'Daily funnel table', healthdash:'Health dashboard', anomalylog:'Anomaly log', funnel:'Funnel & checkout', ga4cro:'GA4 & CRO diagnostics', payments:'Payment health', microfunnel:'Micro-funnel backlog', behaviour:'Cart recovery', cohorts:'New vs returning', retention:'Retention & cohorts — web + stores', crosssell:'Cross-sell & basket', products:'Product mix', geo:'State x product', ads:'Meta ads', competitor:'Competitor analysis (draft)', roadmap:'Roadmap signals', sku:'SKU & category deep dive', sale:'Diwali sale — Oct 8 to Nov 21' };
   document.getElementById('page-title').textContent = titles[id] || id;
 }
 
@@ -1276,11 +1316,21 @@ const AS_OF = SC_DATA.as_of;
 function renderHighlights() {
   const highlights = [
     // --- changed / new in this build ---
-    { text: 'The Google CPC surge ended on Sep 30 — back to ~5,500 sessions a day Oct 1-4 with the same ~40-70 orders a day it had before, during and after. Sep 24-30: ~945,000 extra sessions, zero extra orders', dir: 'up', target: 'daily', since: '2026-10-05', isNew: true },
-    { text: 'Confirmed: the late-September ex-prospecting dip was surge spillover. With the surge off, net-of-prospecting CVR is back to 0.79-1.12% on ~11k sessions a day (Oct 1-4), the same as Sep 20-25', dir: 'up', target: 'daily', since: '2026-10-05', isNew: true },
-    { text: 'September closed: 5,480 D2C orders, Rs 3.98Cr — 183 a day vs 218 in August (-16%). All month tabs now show full Jun-Sep', dir: 'down', target: 'funnel', since: '2026-10-05', isNew: true },
-    { text: 'Stores did 822 orders on Oct 4 (normal 130-250) at Rs 6,318 AOV — pillows at 5-15x their usual daily count. Looks like an in-store pillow push; confirm with retail', dir: 'up', target: 'healthdash', since: '2026-10-05', isNew: true },
-    { text: 'Sixteen days of 50:50 checkout routing — Magic 1,461 orders vs GoKwik 1,450. Conversion-neutral', dir: 'up', target: 'payments', since: '2026-10-05', isNew: true },
+    { text: 'Diwali sale day 1 (Oct 8): Rs 1.30Cr gross, 163% of the Rs 80L target. D2C 746 orders / Rs 66.4L (4.5x pre-sale), stores 317 / Rs 63.8L. 568 mattress orders across both', dir: 'up', target: 'sale', since: '2026-10-09', isNew: true },
+    { text: 'Google CPC drove the launch: 257 orders on 16,354 sessions (1.57% CVR) vs ~55 orders a day pre-sale. Facebook BOFU brought 44,670 sessions but only 83 orders', dir: 'up', target: 'daily', since: '2026-10-09', isNew: true },
+    { text: 'Month tabs moved to Jul - Oct (October to date, includes the first sale day). Read October as partial until it closes', dir: 'up', target: 'funnel', since: '2026-10-09', isNew: true },
+    { text: 'With GoKwik taking ~99% of checkouts, only 227 Razorpay checkouts were abandoned in October so far. Cart recovery and payment tabs now cover a small slice of orders', dir: 'down', target: 'behaviour', since: '2026-10-09', isNew: true },
+    { text: 'New Diwali sale tab: Oct 8 - Nov 21 tracked daily against Rs 80L gross a day (D2C + stores) and last year at the same days to Diwali. Pre-sale run-rate is Rs 35.6L a day, so the target needs a 2.2x lift; last year delivered 1.8x', dir: 'up', target: 'sale', since: '2026-10-07' },
+    { text: 'Checkout routing switched to GoKwik on Oct 6 — 152 of 157 D2C orders (56-60% Oct 1-5). Source attribution shifted with it, and the Razorpay-based Payment health and Cart recovery tabs will thin out if this holds', dir: 'down', target: 'payments', since: '2026-10-07' },
+    { text: 'Stores did Rs 9.84L on Oct 6, the lowest day since Aug 20, the evening before the sale', dir: 'down', target: 'healthdash', since: '2026-10-07' },
+    { text: 'October is level with September so far — 918 D2C orders in Oct 1-5, 184 a day vs 183 in September, revenue Rs 13.5L a day vs Rs 13.3L. The slide has stopped but not reversed', dir: 'up', target: 'daily', since: '2026-10-06' },
+    { text: 'Facebook TOFU fell to 20,142 sessions on Oct 5 (29,159 on Oct 4) and orders barely moved — it brings ~20 orders a day at any volume', dir: 'down', target: 'daily', since: '2026-10-06' },
+    { text: 'The Oct 4 store pillow spike was one day only: POS back to 106 orders at Rs 14,535 AOV on Oct 5', dir: 'up', target: 'healthdash', since: '2026-10-06' },
+    { text: 'The Google CPC surge ended on Sep 30 — back to ~5,500 sessions a day Oct 1-4 with the same ~40-70 orders a day it had before, during and after. Sep 24-30: ~945,000 extra sessions, zero extra orders', dir: 'up', target: 'daily', since: '2026-10-05' },
+    { text: 'Confirmed: the late-September ex-prospecting dip was surge spillover. With the surge off, net-of-prospecting CVR is back to 0.79-1.12% on ~11k sessions a day (Oct 1-4), the same as Sep 20-25', dir: 'up', target: 'daily', since: '2026-10-05' },
+    { text: 'September closed: 5,479 D2C orders, Rs 3.98Cr — 183 a day vs 218 in August (-16%). All month tabs now show full Jun-Sep', dir: 'down', target: 'funnel', since: '2026-10-05' },
+    { text: 'Stores did 822 orders on Oct 4 (normal 130-250) at Rs 6,318 AOV — pillows at 5-15x their usual daily count. Looks like an in-store pillow push; confirm with retail', dir: 'up', target: 'healthdash', since: '2026-10-05' },
+    { text: 'Sixteen days of 50:50 checkout routing — Magic 1,461 orders vs GoKwik 1,450. Conversion-neutral', dir: 'up', target: 'payments', since: '2026-10-05' },
     { text: 'The ex-prospecting CVR dip repeated (0.60% on Sep 29 after 0.46% on Sep 28) but reads as surge spillover, not the site: since Sep 26 its sessions rose from ~10.9k to ~17.5k a day while its orders held at ~110 a day. Check that every new Google campaign carries UTMs', dir: 'down', target: 'daily', since: '2026-09-30' },
     { text: 'Google CPC day 6 — 205,734 sessions on Sep 29 for 53 orders, first day below the peak. Last 7 days 936,227 sessions and 329 orders vs 36,830 and 345 the week before: 25x the traffic, 5% fewer orders', dir: 'down', target: 'daily', since: '2026-09-30' },
     { text: 'Eleven days of 50:50 checkout routing — Magic 1,026 orders vs GoKwik 974, GoKwik 5.1% behind. Still conversion-neutral', dir: 'up', target: 'payments', since: '2026-09-30' },
@@ -1417,6 +1467,10 @@ renderHighlights();
 
 function renderAnomalyLog() {
   const rows = [
+    {p:'Oct 8, 2026', a:'Sale launch', w:'Expected spike - Diwali sale day 1', m:'746 D2C orders (vs ~166/day), 138,453 sessions, 317 store orders at Rs 20.1k AOV. Sale went live at midnight (61 web orders 00:00-01:00). Not a data fault; all daily comparisons from Oct 8 should be read against the sale, not BAU', sev:'low', tab:'Daily Funnel Table'},
+    {p:'Oct 1-8, 2026', a:'Coverage', w:'Razorpay-based tabs losing coverage', m:'GoKwik handled 739 of 746 D2C orders on Oct 8. Cart recovery (227 abandoned Razorpay checkouts in Oct) and Payment health now describe a small, unrepresentative slice. A GoKwik abandoned-cart feed is needed to keep these tabs meaningful', sev:'med', tab:'Cart recovery'},
+    {p:'Oct 6, 2026', a:'Checkout / attribution', w:'GoKwik took 97% of D2C orders - routing changed from ~50:50', m:'152 of 157 D2C orders went through GoKwik on Oct 6 vs 93-103 a day (56-60%) on Oct 1-5. Untagged orders fell 77 -> 41 while Google CPC (+9) and Facebook TOFU (+13) rose, so source-level CVRs are not comparable across Oct 5/6. Payment health and Cart recovery are Razorpay-based and will lose coverage if this is permanent. Confirm with the checkout owner', sev:'med', tab:'Daily Funnel Table'},
+    {p:'Oct 5, 2026', a:'Data restatement', w:'Sep 30 restated by one cancelled order', m:'Sep 30 D2C orders 159 -> 158 (Rs 9.66L -> Rs 9.59L). September total now 5,479 orders / Rs 3.98Cr. Month-on-month tabs, retention cohorts and cart recovery were re-pulled from Snowflake to pick this up; other movements are under 1%', sev:'low', tab:'All month-on-month tabs'},
     {p:'Sep 30 - Oct 4, 2026', a:'Media efficiency', w:'RESOLVED - Google CPC surge ended; ex-prospecting dip was spillover', m:'Google CPC sessions 205,768 (Sep 29) -> 55,599 (Sep 30) -> ~5,300-5,700/day Oct 1-4. Its orders held at ~40-70/day throughout (~945k extra sessions Sep 24-30). With the surge gone, net-of-prospecting CVR returned to 0.79-1.12% on ~11k sessions/day, matching Sep 20-25 - confirming the Sep 26-29 dip was untagged surge traffic. Open: cost of the Sep 22-30 campaigns', sev:'low', tab:'Daily Funnel Table'},
     {p:'Oct 4, 2026', a:'Stores', w:'POS spike - 822 orders at Rs 6,318 AOV', m:'Normal day is 130-250 store orders at Rs 11-16k AOV. Oct 4 was pillow-led: Cloud Pillow 139 orders (avg 18/day), Cuddle 103 (avg 8), plus 181 tote-bag lines at Rs 1. Looks like an in-store pillow promotion with a free tote; confirm with retail before reading store AOV for the week', sev:'low', tab:'Health Dashboard'},
     {p:'Sep 29, 2026', a:'Daily funnel', w:'Ex-prospecting dip repeated - likely untagged surge traffic', m:'Net of Google CPC (53 orders) and Facebook TOFU (19), the rest of the site did 103 orders on 17,287 sessions = 0.60% (Sep 28: 0.46%). Across Sep 26-29 ex-prospecting sessions averaged 17.5k/day vs 10.9k on Sep 20-25 while orders held at ~110/day. Orders flat on 60% more sessions points to surge traffic landing without a CPC tag, not a site problem. Confirm UTMs on the new Google campaigns', sev:'med', tab:'Daily Funnel Table'},
@@ -1920,7 +1974,8 @@ function renderWeeklyHealth() {
   // Snowflake (the QueueBuster feed ends Feb 2026), so those weeks are marked no-data
   // rather than carrying the phantom ~1,000-orders/week the previous build showed.
   const weeks = [
-    {w:'Sep 28', orders:1249, revenue:9260790, pos:1807, posRev:18383522},
+    {w:'Oct 5 (partial, 4d)', orders:1238, revenue:10449122, pos:602, posRev:9797322},
+    {w:'Sep 28', orders:1248, revenue:9254241, pos:1807, posRev:18383522},
     {w:'Sep 21', orders:1325, revenue:9627396, pos:1088, posRev:15297475},
     {w:'Sep 14', orders:1170, revenue:8485518, pos:1100, posRev:15569880},
     {w:'Sep 7', orders:1194, revenue:9009532, pos:1111, posRev:16057429},
@@ -1997,7 +2052,7 @@ new Chart(document.getElementById('dailyChart'), { type: 'bar', data: { labels: 
   { label: 'Revenue (₹L)', data: last7.map(d => Math.round(d.sales/100000*10)/10), backgroundColor: MUSTARD, borderRadius: 4, yAxisID: 'y1' }
 ] }, options: { ...baseOpts, scales: { ...baseOpts.scales, y: { ...baseOpts.scales.y, position: 'left' }, y1: { grid: { drawOnChartArea: false }, ticks: { color: textMuted, font: { size: 11 } }, position: 'right' } } } });
 
-new Chart(document.getElementById('channelChart'), { type: 'bar', data: { labels: ['D2C Online','Store (physical retail)'], datasets: [{ data: [197, 822], backgroundColor: [PLUM, MUSTARD], borderRadius: 4 }] }, options: { ...baseOpts, indexAxis: 'y' } });
+new Chart(document.getElementById('channelChart'), { type: 'bar', data: { labels: ['D2C Online','Store (physical retail)'], datasets: [{ data: [746, 317], backgroundColor: [PLUM, MUSTARD], borderRadius: 4 }] }, options: { ...baseOpts, indexAxis: 'y' } });
 
 const wks = ['May 11','May 18','May 25','Jun 1','Jun 8','Jun 15','Jun 22','Jun 29','Jul 6','Jul 13','Jul 20','Jul 27','Aug 3','Aug 10'];
 
@@ -2549,6 +2604,126 @@ mfbRender();
     s.title = SNAP[m[1]] ? SNAP[m[1]] + ' — not auto-refreshed' : 'Live — data through ' + fmtD(MM.through);
     b.appendChild(s);
   });
+})();
+
+// ===== Diwali sale tab (SC_DATA.SALE, built by scripts/sale.py) =====
+(function () {
+  const S = (window.SC_DATA || {}).SALE; if (!S || !document.getElementById('page-sale')) return;
+  const $ = id => document.getElementById(id);
+  const TG = S.target, MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dt = iso => new Date(iso + 'T00:00:00');
+  const fd = iso => { const d = dt(iso); return MON[d.getMonth()] + ' ' + d.getDate(); };
+  const L = v => '₹' + (v / 1e5).toFixed(1) + 'L';
+  const CR = v => v >= 1e7 ? '₹' + (v / 1e7).toFixed(2) + 'Cr' : L(v);
+  const pct = (a, b) => b ? ((a / b - 1) * 100) : null;
+  const sg = v => v == null ? '—' : (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(0) + '%';
+  const N = v => v == null ? '—' : Math.round(v).toLocaleString('en-IN');
+  const has = e => e.wr != null;
+  const gross = e => (e.wr || 0) + (e.sr || 0), lyG = e => e.lyW + e.lyS;
+  const sale = S.days.filter(e => !e.pre), pre = S.days.filter(e => e.pre && has(e));
+  const done = sale.filter(has), nDone = done.length, nLeft = sale.length - nDone;
+  const tot = done.reduce((a, e) => a + gross(e), 0), totLY = done.reduce((a, e) => a + lyG(e), 0);
+  const b = S.base.sep, sepDay = (b.w + b.s) / b.n;
+  const preDay = pre.length ? pre.reduce((a, e) => a + gross(e), 0) / pre.length : null;
+  const lyWin = sale.reduce((a, e) => a + lyG(e), 0) / sale.length;
+  const lyPeak = sale.reduce((m, e) => lyG(e) > lyG(m) ? e : m, sale[0]);
+  const fullTarget = TG * sale.length;
+  const kpi = (l, v, d, cls, flag) => `<div class="kpi-card${flag ? ' neg-flag' : ''}"><div class="kpi-label">${l}</div><div class="kpi-value">${v}</div><div class="kpi-delta ${cls}">${d}</div></div>`;
+
+  // stamp + banner
+  const st = $('saleStamp');
+  st.innerHTML = `<span class="live-dot"></span><b>Diwali sale</b> · ${fd(S.start)} – ${fd(S.end)} (${sale.length} days) · Diwali ${fd(S.diwali)} · ` +
+    (nDone ? `day ${nDone} of ${sale.length}, data through ${fd(S.through)}` : `starts ${fd(S.start)} — first sale day lands in the ${fd(new Date(dt(S.start).getTime() + 864e5).toISOString().slice(0, 10))} build`);
+  st.classList.add('is-live');
+  const last = done[nDone - 1];
+  if (!nDone) {
+    $('saleBanner').innerHTML = `<div class="insight-label">Before the sale · what ₹80L a day means</div>
+      Pre-sale run-rate is <b>${L(sepDay)}/day</b> (September: ${L(b.w / b.n)} D2C + ${L(b.s / b.n)} stores). ₹80L is <b>${(TG / sepDay).toFixed(1)}x</b> that. Last year's sale took D2C + stores from ₹17.6L to ₹32.4L a day (<b>1.8x</b>, Sep 22 – Oct 20, 2025) — so the target needs a bigger lift than last year delivered. Full-sale target: <b>${CR(fullTarget)}</b> over ${sale.length} days.
+      <span class="rec">→ This tab fills in from the first sale day. Read stores and D2C separately: stores are ~60% of today's revenue.</span>`;
+  } else {
+    const need = nLeft ? (fullTarget - tot) / nLeft : 0, avg = tot / nDone;
+    $('saleBanner').className = 'insight-banner ' + (avg >= TG ? 'success' : avg >= TG * 0.8 ? 'warn' : 'danger');
+    $('saleBanner').innerHTML = `<div class="insight-label">Sale pace · day ${nDone} of ${sale.length} · data through ${fd(S.through)}</div>
+      <b>${CR(tot)}</b> gross so far — <b>${L(avg)}/day</b> vs the ₹80L target (${(avg / TG * 100).toFixed(0)}%). ${fd(last.d)}: ${L(gross(last))} (${L(last.wr)} D2C + ${L(last.sr)} stores).
+      Last year, same days to Diwali: ${CR(totLY)} (${sg(pct(tot, totLY))}). ${nLeft ? `To finish on ${CR(fullTarget)}, the remaining ${nLeft} days need <b>${L(need)}/day</b>.` : ''}`;
+  }
+
+  // KPIs
+  if (!nDone) {
+    $('saleKpis').innerHTML = [
+      kpi('Daily target', L(TG), 'D2C + stores, every sale day', 'neu'),
+      kpi('Pre-sale run-rate', L(sepDay) + '/day', `September · ${(TG / sepDay).toFixed(1)}x lift needed`, 'neg', true),
+      kpi('Last 7 days pre-sale', preDay ? L(preDay) + '/day' : '—', pre.length ? `${fd(pre[0].d)} – ${fd(pre[pre.length - 1].d)} · incl. Oct 4 store spike` : '', 'neu'),
+      kpi('Last year, same window', L(lyWin) + '/day', `D−31 to D+13 · peak ${L(lyG(lyPeak))} (${fd(lyPeak.ly)}, 2025)`, 'neu'),
+      kpi('Full-sale target', CR(fullTarget), `${sale.length} days × ₹80L`, 'neu'),
+      kpi('Days to Diwali', String(Math.round((dt(S.diwali) - dt(S.through)) / 864e5)), `Diwali ${fd(S.diwali)}`, 'neu')].join('');
+  } else {
+    const avg = tot / nDone, need = nLeft ? (fullTarget - tot) / nLeft : 0;
+    const wAvg = done.reduce((a, e) => a + e.wr, 0) / nDone, sAvg = done.reduce((a, e) => a + e.sr, 0) / nDone;
+    $('saleKpis').innerHTML = [
+      kpi('Sale to date', CR(tot), `target to date ${CR(TG * nDone)} · ${(tot / (TG * nDone) * 100).toFixed(0)}%`, tot >= TG * nDone ? 'pos' : 'neg', tot < TG * nDone * 0.8),
+      kpi('Avg per sale day', L(avg), `vs ₹80L · ${(avg / sepDay).toFixed(1)}x pre-sale (${L(sepDay)})`, avg >= TG ? 'pos' : 'neg'),
+      kpi(`${fd(last.d)} gross`, L(gross(last)), `${(gross(last) / TG * 100).toFixed(0)}% of target · LY ${L(lyG(last))}`, gross(last) >= TG ? 'pos' : 'neg'),
+      kpi('D2C per day', L(wAvg), `${N(done.reduce((a, e) => a + e.wo, 0) / nDone)} orders/day · pre-sale ${L(b.w / b.n)}`, wAvg >= b.w / b.n ? 'pos' : 'neg'),
+      kpi('Stores per day', L(sAvg), `${N(done.reduce((a, e) => a + e.so, 0) / nDone)} orders/day · pre-sale ${L(b.s / b.n)}`, sAvg >= b.s / b.n ? 'pos' : 'neg'),
+      kpi('vs last year', sg(pct(tot, totLY)), `same ${nDone} days to Diwali · LY ${CR(totLY)}`, tot >= totLY ? 'pos' : 'neg'),
+      kpi('Needed per remaining day', nLeft ? L(need) : '—', nLeft ? `${nLeft} days left to hit ${CR(fullTarget)}` : 'sale over', need > TG ? 'neg' : 'pos')].join('');
+  }
+
+  // daily chart: pre-sale + sale days, stacked actuals, target + LY lines
+  const lab = S.days.map(e => fd(e.d) + (e.dtd === 0 ? ' · Diwali' : ''));
+  const tickCb = (v, i) => { const e = S.days[i]; return e.dtd === 0 || i === 0 || e.d === S.start || e.d === S.end || (i % 7 === 0) ? lab[i] : ''; };
+  const opts = (y) => ({ ...baseOpts, plugins: { ...baseOpts.plugins, tooltip: { ...baseOpts.plugins.tooltip, mode: 'index', intersect: false } },
+    scales: { x: { ...baseOpts.scales.x, stacked: true, ticks: { ...baseOpts.scales.x.ticks, autoSkip: false, maxRotation: 0, callback: tickCb } }, y: { ...baseOpts.scales.y, stacked: true, ...y } } });
+  new Chart($('saleDailyChart'), { data: { labels: lab, datasets: [
+      { type: 'bar', label: 'D2C online', data: S.days.map(e => has(e) ? +(e.wr / 1e5).toFixed(2) : null), backgroundColor: S.days.map(e => e.pre ? PLUM + '66' : PLUM), stack: 'a', order: 2 },
+      { type: 'bar', label: 'Stores', data: S.days.map(e => has(e) ? +(e.sr / 1e5).toFixed(2) : null), backgroundColor: S.days.map(e => e.pre ? MUSTARD + '66' : MUSTARD), stack: 'a', order: 2 },
+      { type: 'line', label: 'Target', data: S.days.map(e => e.pre ? null : TG / 1e5), borderColor: '#c0392b', borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0, stack: 't', order: 1 },
+      { type: 'line', label: 'Last year', data: S.days.map(e => +(lyG(e) / 1e5).toFixed(2)), borderColor: textMuted, borderWidth: 1.5, pointRadius: 0, tension: 0.25, stack: 'l', order: 1 }] },
+    options: opts({ suggestedMax: 95, ticks: { ...baseOpts.scales.y.ticks, callback: v => '₹' + v + 'L' } }) });
+  $('saleDailyTake').innerHTML = !nDone
+    ? `Last year's line is aligned by days to Diwali. Its shape: a jump at the sale start (₹${(lyG(sale.find(e => e.ly === '2025-09-22')) / 1e5).toFixed(0)}L on Sep 22, 2025), weekend peaks up to ${L(lyG(lyPeak))}, then a sharp drop the day after Diwali. Faded bars = the last pre-sale days (${L(sepDay)}/day in September).`
+    : `${nDone} sale day${nDone > 1 ? 's' : ''} in. Best day so far ${(m => fd(m.d) + ' ' + L(gross(m)))(done.reduce((m, e) => gross(e) > gross(m) ? e : m, done[0]))}. Days at or above ₹80L: ${done.filter(e => gross(e) >= TG).length}.`;
+
+  // cumulative
+  let c = 0, cl = 0;
+  const cum = sale.map(e => has(e) ? +((c += gross(e)) / 1e7).toFixed(3) : null);
+  const cumLY = sale.map(e => +((cl += lyG(e)) / 1e7).toFixed(3));
+  new Chart($('saleCumChart'), { type: 'line', data: { labels: sale.map(e => fd(e.d)), datasets: [
+      { label: 'Actual', data: cum, borderColor: PLUM, backgroundColor: PLUM, borderWidth: 2, pointRadius: 0 },
+      { label: 'Target', data: sale.map((e, i) => +(TG * (i + 1) / 1e7).toFixed(3)), borderColor: '#c0392b', borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0 },
+      { label: 'Last year', data: cumLY, borderColor: textMuted, borderWidth: 1.5, pointRadius: 0 }] },
+    options: { ...baseOpts, plugins: { ...baseOpts.plugins, tooltip: { ...baseOpts.plugins.tooltip, mode: 'index', intersect: false } },
+      scales: { x: { ...baseOpts.scales.x, ticks: { ...baseOpts.scales.x.ticks, maxTicksLimit: 7, maxRotation: 0 } }, y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => '₹' + v + 'Cr' } } } } });
+  $('saleCumTake').innerHTML = nDone
+    ? `${CR(tot)} vs ${CR(TG * nDone)} target to date (gap ${CR(Math.abs(TG * nDone - tot))} ${tot >= TG * nDone ? 'ahead' : 'behind'}). Last year at the same point: ${CR(totLY)}.`
+    : `Target for the whole sale is ${CR(fullTarget)}. Last year's equivalent ${sale.length} days did ${CR(lyWin * sale.length)} (D2C + stores), and the target is ${(TG / lyWin).toFixed(1)}x that.`;
+
+  // website funnel
+  const fdays = S.days.filter(has);
+  new Chart($('saleFunnelChart'), { data: { labels: fdays.map(e => fd(e.d)), datasets: [
+      { type: 'bar', label: 'Sessions', data: fdays.map(e => e.sess), backgroundColor: fdays.map(e => e.pre ? PLUM + '55' : PLUM + 'aa'), yAxisID: 'y' },
+      { type: 'line', label: 'CVR %', data: fdays.map(e => +(e.wo / e.sess * 100).toFixed(2)), borderColor: MUSTARD, backgroundColor: MUSTARD, borderWidth: 2, pointRadius: 2, yAxisID: 'y1' }] },
+    options: { ...baseOpts, plugins: { ...baseOpts.plugins, tooltip: { ...baseOpts.plugins.tooltip, mode: 'index', intersect: false } },
+      scales: { x: { ...baseOpts.scales.x, ticks: { ...baseOpts.scales.x.ticks, maxTicksLimit: 8, maxRotation: 0 } },
+        y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => (v / 1000) + 'k' } },
+        y1: { position: 'right', grid: { display: false }, ticks: { color: textMuted, font: { size: 11 }, callback: v => v + '%' } } } } });
+  const fl = fdays[fdays.length - 1], fp = fdays.filter(e => e.pre);
+  const preCvr = fp.length ? fp.reduce((a, e) => a + e.wo, 0) / fp.reduce((a, e) => a + e.sess, 0) * 100 : null;
+  $('saleFunnelTake').innerHTML = fl ? `${fd(fl.d)}: ${N(fl.sess)} sessions, ${fl.wo} orders, CVR ${(fl.wo / fl.sess * 100).toFixed(2)}%` + (preCvr ? ` · pre-sale average ${preCvr.toFixed(2)}%.` : '.') + ' If sessions jump and CVR falls, check the Daily tab’s source table before reading it as a site problem.' : '';
+
+  // table
+  const rows = S.days.filter(e => has(e) || !e.pre).slice().reverse().filter(e => has(e) || e.d <= S.end);
+  const shown = rows.filter(e => has(e)).concat(nDone < sale.length ? [sale[nDone]] : []);
+  $('saleBody').innerHTML = shown.sort((a, z) => z.d.localeCompare(a.d)).map(e => {
+    const g = gross(e), ly = lyG(e), sty = e.pre ? ' style="opacity:.6"' : '';
+    const dtd = e.dtd > 0 ? 'D−' + e.dtd : e.dtd === 0 ? '<b>Diwali</b>' : 'D+' + (-e.dtd);
+    if (!has(e)) return `<tr style="opacity:.55"><td>${fd(e.d)} <span class="sub">first sale day — tomorrow's build</span></td><td>${dtd}</td><td colspan="6"></td><td>${L(ly)}</td><td></td><td></td><td></td></tr>`;
+    const vt = e.pre ? '<span class="sub">pre-sale</span>' : `<span style="color:var(--text-${g >= TG ? 'success' : 'danger'})">${(g / TG * 100).toFixed(0)}%</span>`;
+    const vl = pct(g, ly);
+    return `<tr${sty}><td>${fd(e.d)}${e.pre ? ' <span class="sub">pre</span>' : ''}</td><td>${dtd}</td><td>${e.wo}</td><td>${L(e.wr)}</td><td>${e.so}</td><td>${L(e.sr)}</td><td><b>${L(g)}</b></td><td>${vt}</td><td>${L(ly)}</td>` +
+      `<td style="color:var(--text-${vl >= 0 ? 'success' : 'danger'})">${sg(vl)}</td><td>${e.wm != null ? (e.wm + e.sm) + ' <span class="sub">' + e.wm + ' web · ' + e.sm + ' store</span>' : '—'}</td><td>${(e.wo / e.sess * 100).toFixed(2)}%</td></tr>`;
+  }).join('');
 })();
 
 </script>
