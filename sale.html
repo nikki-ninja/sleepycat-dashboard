@@ -467,7 +467,7 @@ $('bauNote').innerHTML = `BAU = ${M.bauLabel}. Sale = full sale days from ${fd(M
     { type: 'line', label: 'BAU average', data: days.map(() => +(FB.gross / 1e5).toFixed(1)), borderColor: GREY, borderWidth: 1.2, pointRadius: 0, stack: 'b' }] },
     options: { ...baseOpts, scales: { x: { ...baseOpts.scales.x, stacked: true }, y: { ...baseOpts.scales.y, stacked: true, suggestedMax: 100, ticks: { ...baseOpts.scales.y.ticks, callback: v => '₹' + v + 'L' } } } } });
   const best = SALE.reduce((m, d) => gross(d) > gross(m) ? d : m, SALE[0] || LAST);
-  $('pulseTake').innerHTML = nS ? `Best sale day so far: ${fd(best.d)} at ${L(gross(best))} (${L(best.wr)} website + ${L(best.sr)} stores). The website and the stores are close to an even split of sale revenue, so plan stock and staffing for both.` : 'The sale has not started yet.';
+  $('pulseTake').innerHTML = nS ? `Best sale day so far: ${fd(best.d)} at ${L(gross(best))} (${L(best.wr)} website + ${L(best.sr)} stores). Stores are ${P(FS.srDay / FS.gross * 100, 0)} of sale revenue and the website ${P(FS.rDay / FS.gross * 100, 0)}. Days under target so far: ${SALE.filter(d => gross(d) < M.target).map(d => fd(d.d)).join(', ') || 'none'}.` : 'The sale has not started yet.';
   const rows = [
     ['Sessions', FB.sDay, FS.sDay, N, LAST.sess], ['Add-to-cart rate', FB.atcR, FS.atcR, P, LAST.atc / LAST.sess * 100, 1],
     ['CVR (orders ÷ sessions)', FB.cvr, FS.cvr, P, LAST.wo / LAST.sess * 100, 1], ['CVR ex-prospecting', FB.cvrx, FS.cvrx, P, (LAST.wo - LAST.proO) / (LAST.sess - LAST.proS) * 100, 1],
