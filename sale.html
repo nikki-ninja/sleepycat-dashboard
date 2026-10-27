@@ -314,6 +314,10 @@
       <div class="chart-card"><div class="card-title">Landing pages — completion</div><div class="card-sub">Sale days vs BAU · GoKwik records where the shopper landed</div><div class="table-scroll" style="max-height:300px;margin-top:8px"><table class="data-table"><thead><tr><th>Landing page</th><th>Orders</th><th>Abandoned</th><th>Completion</th><th>BAU</th></tr></thead><tbody id="ckLp"></tbody></table></div></div>
     </div>
     <div class="chart-card full"><div class="card-title">How customers paid</div><div class="card-sub">Share of GoKwik orders · sale vs BAU</div><div class="chart-wrap" style="height:190px"><canvas id="ckPay" role="img" aria-label="Payment method mix"></canvas></div></div>
+    <div class="grid-2">
+      <div class="chart-card"><div class="card-title">GoKwik checkout funnel</div><div class="card-sub" id="ckFunSub"></div><div class="table-scroll" style="margin-top:8px"><table class="data-table"><thead><tr><th>Period · per day</th><th>Checkout</th><th>Address</th><th>Payment page</th><th>Method picked</th><th>Paid</th><th>Conv.</th></tr></thead><tbody id="ckFun"></tbody></table></div><div class="card-take" id="ckFunTake"></div></div>
+      <div class="chart-card"><div class="card-title">Payment attempts by method</div><div class="card-sub" id="ckTxnSub"></div><div class="table-scroll" style="margin-top:8px"><table class="data-table"><thead><tr><th>Method</th><th>Paid</th><th>Failed</th><th>Left mid-way</th><th>Success</th></tr></thead><tbody id="ckTxn"></tbody></table></div><div class="card-take" id="ckTxnTake"></div></div>
+    </div>
   </div>
 
   <!-- PRODUCTS -->
@@ -333,7 +337,7 @@
   <!-- GEO -->
   <div class="content" id="page-geo">
     <div class="insight-banner" id="geoBanner"></div>
-    <p class="section-title">States <span class="st-sub">· website · per day, sale vs BAU · sessions from Shopify (IP location)</span></p>
+    <p class="section-title">States <span class="st-sub">· website · per day, sale vs BAU · <span id="geoShopNote">sessions from Shopify (IP location)</span></span></p>
     <div class="table-scroll" style="max-height:520px"><table class="data-table"><thead><tr><th>State</th><th>Sessions / day</th><th>ATC %</th><th>Orders / day</th><th>BAU / day</th><th>Uplift</th><th>CVR</th><th>BAU CVR</th><th>₹ / day</th><th>Mattress share</th><th>Store orders / day</th></tr></thead><tbody id="stateBody"></tbody></table></div>
     <div class="grid-2" style="margin-top:14px">
       <div class="chart-card"><div class="card-title">Top states — website revenue per day</div><div class="card-sub">Sale vs BAU</div><div class="chart-wrap" style="height:300px"><canvas id="stateChart" role="img" aria-label="Revenue by state"></canvas></div></div>
@@ -350,9 +354,11 @@
 
   <!-- LANDING -->
   <div class="content" id="page-landing">
-    <div class="chart-card full"><div class="card-title">Top 10 landing pages by traffic</div><div class="card-sub">Sessions per sale day vs BAU · label = add-to-cart rate</div><div class="chart-wrap" style="height:300px"><canvas id="lpChart" role="img" aria-label="Top landing pages by sessions"></canvas></div><div class="card-take" id="lpTake"></div></div>
+    <div class="chart-card full"><div class="card-title">Top 10 landing pages by traffic</div><div class="card-sub" id="lpSub">Sessions per sale day vs BAU · label = add-to-cart rate</div><div class="chart-wrap" style="height:300px"><canvas id="lpChart" role="img" aria-label="Top landing pages by sessions"></canvas></div><div class="card-take" id="lpTake"></div></div>
     <p class="section-title">Landing pages <span class="st-sub">· ranked by traffic · orders can't be tied to a landing page (GoKwik), so product pages show that product's orders</span></p>
     <div class="table-scroll" style="max-height:560px"><table class="data-table"><thead><tr><th>Landing page</th><th>Sessions / day</th><th>Share</th><th>vs BAU</th><th>ATC %</th><th>BAU ATC %</th><th>Product orders / day</th></tr></thead><tbody id="lpBody"></tbody></table></div>
+    <p class="section-title">Checkout → paid by landing page <span class="st-sub" id="lpFunSub"></span></p>
+    <div class="table-scroll" style="max-height:420px"><table class="data-table"><thead><tr><th>Landing page</th><th>Checkouts / day</th><th>Reached payment</th><th>Picked a method</th><th>Paid / day</th><th>Checkout → paid</th></tr></thead><tbody id="lpFunBody"></tbody></table></div>
   </div>
 
   <!-- UTM -->
@@ -603,9 +609,10 @@ function weekRows(rowFn, refFn) {
 
 // ---------- GEO ----------
 (function geo() {
-  const ST = S.states;
+  const ST = S.states, part = M.shopTo && M.shopTo < M.through;
+  if (part) $('geoShopNote').innerHTML = `sessions & ATC = Shopify, ${fd(M.start)}–${fd(M.shopTo)} only (connector disconnected) · orders through ${fd(M.through)} · CVR hidden as windows differ`;
   $('stateBody').innerHTML = ST.slice(0, 25).map(s => {
-    const cvr = s.sessS ? s.sale[0] / s.sessS[0] * 100 : null, cvrB = s.sessB ? s.bau[0] / s.sessB[0] * 100 : null;
+    const cvr = s.sessS && !part ? s.sale[0] / s.sessS[0] * 100 : null, cvrB = s.sessB ? s.bau[0] / s.sessB[0] * 100 : null;
     const flag = s.sessS && s.sale[0] > 10 && cvr > 3 ? '<span class="pill warn">check orders</span>' : '';
     return `<tr><td>${s.s}${flag}</td><td>${s.sessS ? N(s.sessS[0]) : '—'}</td><td>${s.sessS ? P(s.sessS[1] / s.sessS[0] * 100, 1) : '—'}</td><td>${N(s.sale[0], 1)}</td><td>${N(s.bau[0], 1)}</td><td>${UP(up(s.sale[0], s.bau[0]))}</td><td>${P(cvr)}</td><td>${P(cvrB)}</td><td>${L(s.sale[1])}</td><td>${s.sale[0] ? P(s.sale[2] / s.sale[0] * 100, 0) : '—'}</td><td>${N(s.store[0], 1)}</td></tr>`;
   }).join('');
@@ -619,11 +626,16 @@ function weekRows(rowFn, refFn) {
   const top = ST.slice(0, 3), sus = ST.filter(s => s.sessS && s.sale[0] > 10 && s.sale[0] / s.sessS[0] > 0.03);
   const topShare = sum(top, s => s.sale[1]) / sum(ST, s => s.sale[1]) * 100;
   $('geoBanner').innerHTML = `<div class="insight-label">Where the sale is landing</div>${top.map(s => `<b>${s.s}</b> ${L(s.sale[1])}/day (${UP(up(s.sale[0], s.bau[0]))} orders)`).join(' · ')} — together ${P(topShare, 0)} of website sale revenue.` +
-    (sus.length ? `<span class="rec">→ Check ${sus.map(s => s.s).join(', ')}: ${sus.map(s => `${N(s.sale[0])} orders/day on ${N(s.sessS[0])} sessions`).join('; ')} is a CVR far above every other state — confirm these are genuine retail orders, not bulk or reseller buys.</span>` : '');
+    (sus.length ? `<span class="rec">→ Check ${sus.map(s => s.s).join(', ')}: ${sus.map(s => `${N(s.sale[0])} orders/day on ${N(s.sessS[0])} sessions${part ? ' (sessions Oct 8–12)' : ''}`).join('; ')} is a CVR far above every other state — confirm these are genuine retail orders, not bulk or reseller buys.</span>` : '');
 })();
 
 // ---------- LANDING ----------
 (function landing() {
+  if (M.lpTo && M.lpTo < M.through) $('lpSub').innerHTML = `Shopify sessions per day, ${fd(M.start)}–${fd(M.lpTo)} (connector disconnected since) vs BAU · label = add-to-cart rate`;
+  const KF = window.SC_CK && SC_CK.fun;
+  if (KF) { const nd = KF.days.filter(r => r[0] >= M.start).length || 1;
+    $('lpFunSub').innerHTML = `· GoKwik, ${fd(M.start)}–${fd(KF.to)} · per sale day · top 12 by checkouts`;
+    $('lpFunBody').innerHTML = KF.lp.map(r => `<tr><td>${r[0]}</td><td>${N(r[1] / nd)}</td><td>${P(r[3] / r[1] * 100, 0)}</td><td>${P(r[4] / r[1] * 100, 0)}</td><td>${N(r[5] / nd, 1)}</td><td><b>${P(r[5] / r[1] * 100, 1)}</b></td></tr>`).join(''); }
   const PG = S.pages, tot = sum(PG, p => p.sale[0]), ar = p => p.sale[1] / p.sale[0] * 100;
   const nm = k => k === '/' ? 'Homepage' : k.replace('/products/', '').replace('/collections/', 'collection: ').replace('/pages/', 'page: ');
   const t10 = PG.slice(0, 10);
@@ -710,12 +722,29 @@ function weekRows(rowFn, refFn) {
   const PK = ['UPI', 'Credit card', 'Debit card', 'Card EMI', 'Snapmint (pay later)', 'COD'];
   new Chart($('ckPay'), { type: 'bar', data: { labels: PK, datasets: [{ label: 'BAU', data: PK.map(k => +pB(k).toFixed(1)), backgroundColor: GREY + '99' }, { label: 'Sale', data: PK.map(k => +pS(k).toFixed(1)), backgroundColor: PLUM }] },
     options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: legendOn }, scales: { x: baseOpts.scales.x, y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => v + '%' } } } } });
+  if (K.fun) {
+    const F = K.fun.days, wk = (a, b) => F.filter(r => r[0] >= a && r[0] <= b);
+    const per = [['BAU · ' + fd('2026-10-06'), wk('2026-10-06', '2026-10-06')], ['Sale wk 1 · ' + fd('2026-10-08') + '–' + fd('2026-10-13'), wk('2026-10-08', '2026-10-13')],
+      ['Sale wk 2 · ' + fd('2026-10-14') + '–' + fd('2026-10-20'), wk('2026-10-14', '2026-10-20')], ['Sale wk 3 · ' + fd('2026-10-21') + '–' + fd(K.fun.to), wk('2026-10-21', K.fun.to)], ['Latest · ' + fd(K.fun.to), wk(K.fun.to, K.fun.to)]].filter(p => p[1].length);
+    $('ckFunSub').innerHTML = `GoKwik sessions · % of checkouts reaching each step · through ${fd(K.fun.to)}`;
+    $('ckFun').innerHTML = per.map(([lab, rs], i) => { const s = [1, 2, 3, 4, 5].map(j => sum(rs, r => r[j])), n = rs.length;
+      return `<tr class="${lab.startsWith('BAU') ? 'ref' : ''}"><td>${lab}</td><td>${N(s[0] / n)}</td><td>${P(s[1] / s[0] * 100, 0)}</td><td>${P(s[2] / s[0] * 100, 0)}</td><td>${P(s[3] / s[0] * 100, 0)}</td><td>${N(s[4] / n)}</td><td><b>${P(s[4] / s[0] * 100, 1)}</b></td></tr>`; }).join('');
+    const SF = F.filter(r => r[0] >= M.start), ss = [1, 2, 3, 4, 5].map(j => sum(SF, r => r[j]));
+    $('ckFunTake').innerHTML = `Biggest leak: ${P((1 - ss[3] / ss[2]) * 100, 0)} of shoppers who reach the payment page never pick a method. Address → payment loses only ${P((1 - ss[2] / ss[1]) * 100, 0)}.`;
+  }
+  if (K.txn) {
+    const T = K.txn.meth, sr = r => r[1] / (r[1] + r[2] + r[3]) * 100, ft = sum(K.txn.fail, f => f[1]);
+    $('ckTxnSub').innerHTML = `GoKwik transactions · ${fd(K.txn.from)}–${fd(K.txn.to)} · success = paid ÷ all attempts`;
+    $('ckTxn').innerHTML = T.filter(r => r[1] + r[2] + r[3] >= 50).map(r => `<tr><td>${r[0]}</td><td>${N(r[1])}</td><td>${N(r[2])}</td><td>${N(r[3])}</td><td class="${sr(r) < 40 ? 'dn' : ''}"><b>${P(sr(r), 0)}</b></td></tr>`).join('');
+    const sm = T.find(r => r[0] === 'Snapmint');
+    $('ckTxnTake').innerHTML = `Failure reasons: ${K.txn.fail.slice(0, 4).map(f => `${f[0].toLowerCase()} ${P(f[1] / ft * 100, 0)}`).join(' · ')}.` + (sm ? ` Snapmint pays out on only ${P(sr(sm), 0)} of attempts — the weakest method; worth a fallback prompt to UPI/card.` : '');
+  }
 })();
 
 // ---------- NEXT ----------
 $('suggBox').innerHTML = [
   ['Stock vs run-rate', 'Days of stock left for the top 20 SKUs at sale pace.'],
-  ['GoKwik abandoned carts', 'Recovery and payment failures for the ~99% of checkouts now on GoKwik.'],
+  ['Shopify connector', 'Reconnect so landing-page and city sessions extend past ' + fd(M.shopTo || M.through) + '.'],
   ['Cancellations & returns by coupon', '7/14-day cancel and return rate for sale orders, by code.'],
   ['Delivery lag', 'Order → dispatch → delivery days, by state.'],
   ['CX load', 'Calls, chats and tickets per 100 orders, by reason.'],
