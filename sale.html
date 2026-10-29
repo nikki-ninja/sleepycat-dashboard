@@ -219,6 +219,7 @@
     <button class="nav-item" onclick="showPage('funnel', this)"><span class="nav-icon">▽</span> Full funnel — by week</button>
     <button class="nav-item" onclick="showPage('orders', this)"><span class="nav-icon">₹</span> Orders, revenue & AOV</button>
     <button class="nav-item" onclick="showPage('checkout', this)"><span class="nav-icon">⇥</span> Checkout behaviour</button>
+    <button class="nav-item" onclick="showPage('gokwik', this)"><span class="nav-icon">◎</span> GoKwik deep dive</button>
   </div>
   <div class="nav-section"><div class="nav-label">What sells</div>
     <button class="nav-item" onclick="showPage('products', this)"><span class="nav-icon">▤</span> Products & attach rate</button>
@@ -320,6 +321,34 @@
     </div>
   </div>
 
+  <!-- GOKWIK DEEP DIVE -->
+  <div class="content" id="page-gokwik">
+    <div class="data-stamp" id="gkStamp"></div>
+    <div class="kpi-row" id="gkKpis"></div>
+    <p class="section-title">Orders <span class="st-sub">· how people pay and what they bundle</span></p>
+    <div class="grid-2">
+      <div class="chart-card"><div class="card-title">Payment method</div><div class="card-sub">GoKwik orders · share and order value</div><div class="table-scroll" style="margin-top:8px"><table class="data-table"><thead><tr><th>Method</th><th>Orders</th><th>Share</th><th>AOV</th><th>Median</th></tr></thead><tbody id="gkPay"></tbody></table></div><div class="card-take" id="gkPayTake"></div></div>
+      <div class="chart-card"><div class="card-title">What goes with a mattress</div><div class="card-sub">Most common multi-product orders</div><div class="table-scroll" style="margin-top:8px"><table class="data-table"><thead><tr><th>Combination</th><th>Orders</th></tr></thead><tbody id="gkCombo"></tbody></table></div><div class="card-take" id="gkComboTake"></div></div>
+    </div>
+    <p class="section-title">Abandoned carts <span class="st-sub">· where the money is and how fast it comes back</span></p>
+    <div class="grid-2">
+      <div class="chart-card"><div class="card-title">Completion by cart value</div><div class="card-sub">Orders ÷ (orders + abandoned carts)</div><div class="chart-wrap" style="height:220px"><canvas id="gkBand" role="img" aria-label="Completion by cart value"></canvas></div><div class="card-take" id="gkBandTake"></div></div>
+      <div class="chart-card"><div class="card-title">Came back & bought</div><div class="card-sub">Same phone ordered later · by last step and time taken</div><div class="table-scroll" style="margin-top:8px"><table class="data-table"><thead><tr><th>Dropped at</th><th>Carts</th><th>Came back</th></tr></thead><tbody id="gkRecStage"></tbody></table></div><div class="table-scroll" style="margin-top:10px"><table class="data-table"><thead><tr><th>Time to return</th><th>Share of recovered</th></tr></thead><tbody id="gkRecLag"></tbody></table></div><div class="card-take" id="gkRecTake"></div></div>
+    </div>
+    <p class="section-title">Checkout funnel by source <span class="st-sub">· % of checkouts reaching each step · "picked a method" = % of those on the payment page</span></p>
+    <div class="table-scroll"><table class="data-table"><thead><tr><th>Source / medium</th><th>Checkouts</th><th>Address</th><th>Payment page</th><th>Picked a method</th><th>Paid</th></tr></thead><tbody id="gkFun"></tbody></table></div>
+    <div class="card-take" id="gkFunTake" style="margin-top:8px"></div>
+    <p class="section-title">Payments <span class="st-sub">· every payment attempt</span></p>
+    <div class="grid-2">
+      <div class="chart-card"><div class="card-title">Success by amount</div><div class="card-sub">Paid ÷ all attempts</div><div class="chart-wrap" style="height:200px"><canvas id="gkAmt" role="img" aria-label="Payment success by amount"></canvas></div><div class="card-take" id="gkAmtTake"></div></div>
+      <div class="chart-card"><div class="card-title">Cards — success by bank and network</div><div class="card-sub">Credit, debit and EMI cards · paid ÷ paid + failed</div><div class="table-scroll" style="margin-top:8px;max-height:260px"><table class="data-table"><thead><tr><th>Bank / network</th><th>Attempts</th><th>Success</th></tr></thead><tbody id="gkCard"></tbody></table></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="chart-card"><div class="card-title">Failed and never paid</div><div class="card-sub">Orders whose last attempt failed, by method</div><div class="chart-wrap" style="height:190px"><canvas id="gkDead" role="img" aria-label="Lost orders by payment method"></canvas></div><div class="card-take" id="gkDeadTake"></div></div>
+      <div class="chart-card"><div class="card-title">Partial COD (PPCOD) pilot</div><div class="card-sub">Eligible orders in pilot regions and cart bands</div><div class="table-scroll" style="margin-top:8px"><table class="data-table"><thead><tr><th>Region</th><th>Eligible orders</th><th>PPCOD</th><th>Share</th><th>AOV PPCOD</th><th>AOV prepaid</th></tr></thead><tbody id="gkPp"></tbody></table></div><div class="card-take" id="gkPpTake"></div></div>
+    </div>
+  </div>
+
   <!-- PRODUCTS -->
   <div class="content" id="page-products">
     <div class="kpi-row" id="attachKpis"></div>
@@ -385,6 +414,7 @@
 </div>
 <script src="data/sale_data.js"></script>
 <script src="data/checkout_data.js"></script>
+<script src="data/gk_deep.js"></script>
 <script>
 const S = window.SC_SALE, M = S.meta;
 const $ = id => document.getElementById(id);
@@ -724,8 +754,11 @@ function weekRows(rowFn, refFn) {
     options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: legendOn }, scales: { x: baseOpts.scales.x, y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => v + '%' } } } } });
   if (K.fun) {
     const F = K.fun.days, wk = (a, b) => F.filter(r => r[0] >= a && r[0] <= b);
-    const per = [['BAU · ' + fd('2026-10-06'), wk('2026-10-06', '2026-10-06')], ['Sale wk 1 · ' + fd('2026-10-08') + '–' + fd('2026-10-13'), wk('2026-10-08', '2026-10-13')],
-      ['Sale wk 2 · ' + fd('2026-10-14') + '–' + fd('2026-10-20'), wk('2026-10-14', '2026-10-20')], ['Sale wk 3 · ' + fd('2026-10-21') + '–' + fd(K.fun.to), wk('2026-10-21', K.fun.to)], ['Latest · ' + fd(K.fun.to), wk(K.fun.to, K.fun.to)]].filter(p => p[1].length);
+    const addD = (s, n) => { const x = new Date(s + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+    const per = [['BAU · ' + fd('2026-10-06'), wk('2026-10-06', '2026-10-06')], ['Sale wk 1 · ' + fd('2026-10-08') + '–' + fd('2026-10-13'), wk('2026-10-08', '2026-10-13')]];
+    for (let s = '2026-10-14', i = 2; s <= K.fun.to; s = addD(s, 7), i++) { const e = addD(s, 6) < K.fun.to ? addD(s, 6) : K.fun.to; per.push([`Sale wk ${i} · ${fd(s)}–${fd(e)}`, wk(s, e)]); }
+    if (wk(K.fun.to, K.fun.to).length && per[per.length - 1][1].length > 1) per.push(['Latest · ' + fd(K.fun.to), wk(K.fun.to, K.fun.to)]);
+    per.splice(0, per.length, ...per.filter(p => p[1].length));
     $('ckFunSub').innerHTML = `GoKwik sessions · % of checkouts reaching each step · through ${fd(K.fun.to)}`;
     $('ckFun').innerHTML = per.map(([lab, rs], i) => { const s = [1, 2, 3, 4, 5].map(j => sum(rs, r => r[j])), n = rs.length;
       return `<tr class="${lab.startsWith('BAU') ? 'ref' : ''}"><td>${lab}</td><td>${N(s[0] / n)}</td><td>${P(s[1] / s[0] * 100, 0)}</td><td>${P(s[2] / s[0] * 100, 0)}</td><td>${P(s[3] / s[0] * 100, 0)}</td><td>${N(s[4] / n)}</td><td><b>${P(s[4] / s[0] * 100, 1)}</b></td></tr>`; }).join('');
@@ -741,10 +774,56 @@ function weekRows(rowFn, refFn) {
   }
 })();
 
+// ---------- GOKWIK DEEP DIVE ----------
+(function gokwik() {
+  const G = window.SC_GK; if (!G) return;
+  const rs = n => '₹' + Math.round(n).toLocaleString('en-IN'), pc = (a, b) => b ? (a / b * 100) : null;
+  $('gkStamp').innerHTML = `<span class="live-dot"></span><b>GoKwik exports — deep dive</b> · latest export window ${fd(G.meta.from)} – ${fd(G.meta.to)} · ${N(G.meta.orders)} orders, ${N(G.meta.carts)} abandoned carts, ${N(G.meta.checkouts)} checkouts, ${N(G.meta.txns)} payment attempts · aggregates only`;
+  const T = G.txn, sn = T.deadByMethod.find(r => r[0] === 'Snapmint');
+  $('gkKpis').innerHTML = [
+    kpi('Mattress orders with a protector', P(G.basket.withProtector, 0), `pillow ${P(G.basket.withPillow, 0)} · anything else ${P(G.basket.withAny, 0)}`, 'neu'),
+    kpi('Known to GoKwik', P(pc(G.cust.repGk, G.cust.newM + G.cust.repM), 0), `address pre-filled ${P(G.cust.prefill, 0)} · Sleepycat-repeat ${P(pc(G.cust.repM, G.cust.newM + G.cust.repM), 0)}`, 'neu'),
+    kpi('Abandoned, never ordered', N(G.pool.never), `${N(G.pool.big)} with a ₹15k+ cart · ₹${G.pool.bigVal}Cr`, 'neg', true),
+    kpi('Recovered within 1 hour', P(G.rec.lag[0][1], 0), `of carts that came back · overall recovery ${P(G.rec.rate, 1)}`, 'neu'),
+    kpi('Failed payment → later paid', P(T.savedPct, 0), `${N(T.failedOrders)} orders hit a failure`, 'neg'),
+    kpi('RTO so far', P(G.rto.rate, 1), `RTO ÷ all orders · ${N(G.rto.rtoN)} of ${N(G.rto.n)} · ${N(G.rto.delivered)} delivered yet`, 'neu')].join('');
+  const tp = sum(G.pay, r => r[1]);
+  $('gkPay').innerHTML = G.pay.map(r => `<tr><td>${r[0]}</td><td>${N(r[1])}</td><td>${P(r[1] / tp * 100, 1)}</td><td><b>${rs(r[2])}</b></td><td>${rs(r[3])}</td></tr>`).join('');
+  const emi = G.pay.find(r => r[0] === 'Card EMI');
+  $('gkPayTake').innerHTML = `Card EMI carries the big tickets (${rs(emi[2])} average); ${T.emi[0][0]} and ${T.emi[1][0]} are ${P((T.emi[0][1] + T.emi[1][1]) / sum(T.emi, r => r[1]) * 100, 0)} of EMI picks. UPI is ${P(sum(G.pay.filter(r => r[0].startsWith('UPI')), r => r[1]) / tp * 100, 0)} of orders.`;
+  $('gkCombo').innerHTML = G.combos.map(r => `<tr><td>${r[0]}</td><td>${N(r[1])}</td></tr>`).join('');
+  $('gkComboTake').innerHTML = `${N(G.basket.matt)} mattress orders (${rs(G.basket.mattAov)} average): ${P(G.basket.withPillow, 0)} add a pillow (mostly FREEPILLOW) but only ${P(G.basket.withProtector, 0)} a protector — the add-on to push at checkout.`;
+  const BC = G.bands.map(r => pc(r[2], r[1] + r[2]));
+  new Chart($('gkBand'), { type: 'bar', data: { labels: G.bands.map(r => r[0]), datasets: [{ label: 'Completion', data: BC.map(v => +v.toFixed(1)), backgroundColor: BC.map(v => v < 25 ? '#c0392b' : PLUM) }] },
+    options: { ...baseOpts, scales: { x: baseOpts.scales.x, y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => v + '%' } } } } });
+  const big = G.bands.slice(3), bigCarts = sum(big, r => r[1]);
+  $('gkBandTake').innerHTML = `Under ₹2k, ${P(BC[0], 0)} of checkouts complete; ₹15k+ only ${P(pc(sum(big, r => r[2]), bigCarts + sum(big, r => r[2])), 0)}. ${N(G.pool.big)} shoppers left a ₹15k+ cart and never ordered — the CX callback list.`;
+  $('gkRecStage').innerHTML = G.rec.stage.map(r => `<tr><td>${r[0]}</td><td>${N(r[1])}</td><td><b>${P(r[2], 1)}</b></td></tr>`).join('');
+  $('gkRecLag').innerHTML = G.rec.lag.map(r => `<tr><td>${r[0]}</td><td>${P(r[1], 1)}</td></tr>`).join('');
+  $('gkRecTake').innerHTML = `Failed-payment carts come back ${P(G.rec.stage[2][2], 0)} of the time; plain payment-page drops only ${P(G.rec.stage[0][2], 0)}. ${P(G.rec.lag[0][1] + G.rec.lag[1][1], 0)} of returns happen within a day — call inside the first hour.`;
+  $('gkFun').innerHTML = G.fun.map(r => `<tr class="${r[0].startsWith('direct') ? 'eve' : ''}"><td>${r[0]}</td><td>${N(r[1])}</td><td>${P(r[2], 0)}</td><td>${P(r[3], 0)}</td><td class="${r[4] < 35 ? 'dn' : ''}"><b>${P(r[4], 0)}</b></td><td><b>${P(r[5], 1)}</b></td></tr>`).join('');
+  const tagged = G.fun.filter(r => !r[0].startsWith('direct')), dir = G.fun.find(r => r[0].startsWith('direct')), wa = G.fun.find(r => r[0].includes('cart recovery'));
+  const pk = tagged.map(r => r[4]);
+  $('gkFunTake').innerHTML = `Tagged sources reach the payment page ${P(Math.min(...tagged.map(r => r[3])), 0)}+ of the time; the leak is choosing a method (${P(Math.min(...pk), 0)}–${P(Math.max(...pk), 0)}).` +
+    (wa ? ` WhatsApp cart-recovery links convert worst (${P(wa[5], 0)}).` : '') + (dir ? ` Direct/untagged shows only ${P(dir[2], 0)} reaching address — likely a tracking artefact, worth checking with GoKwik.` : '');
+  const A = T.amt;
+  new Chart($('gkAmt'), { type: 'bar', data: { labels: A.map(r => r[0]), datasets: [{ label: 'Success', data: A.map(r => r[2]), backgroundColor: PLUM }, { label: 'Failed', data: A.map(r => r[3]), backgroundColor: '#c0392b' }] },
+    options: { ...baseOpts, plugins: { ...baseOpts.plugins, legend: legendOn }, scales: { x: baseOpts.scales.x, y: { ...baseOpts.scales.y, ticks: { ...baseOpts.scales.y.ticks, callback: v => v + '%' } } } } });
+  $('gkAmtTake').innerHTML = `Success falls from ${P(A[0][2], 0)} under ₹5k to ${P(A[3][2], 0)} above ₹30k. ${N(T.upiOpenedLeft)} UPI payments were opened in the app and never finished; when the app returns, UPI succeeds ${P(T.upiDone, 0)}.`;
+  $('gkCard').innerHTML = [...T.bank.map(r => [r[0], r[1], r[2]]), ['—', null, null], ...T.net].map(r => r[1] == null ? `<tr><td colspan="3" class="mu">Network</td></tr>` : `<tr><td>${r[0]}</td><td>${N(r[1])}</td><td class="${r[2] < 65 ? 'dn' : ''}"><b>${P(r[2], 1)}</b></td></tr>`).join('');
+  const D = T.deadByMethod;
+  new Chart($('gkDead'), { type: 'bar', data: { labels: D.map(r => r[0]), datasets: [{ data: D.map(r => r[1]), backgroundColor: D.map(r => r[0] === 'Snapmint' ? '#c0392b' : GREY) }] }, options: { ...baseOpts, indexAxis: 'y' } });
+  const S = G.snap;
+  $('gkDeadTake').innerHTML = `Snapmint: ${N(S.orders)} orders tried it — ${P(S.paidSnap / S.orders * 100, 0)} paid with Snapmint, ${P(S.failedOnly / S.orders * 100, 0)} were declined (no reason passed back), ${P(S.initOnly / S.orders * 100, 0)} left inside the Snapmint flow. Only ${N(S.paidAny - S.paidSnap)} switched to another method — a "pay by UPI or card instead" prompt is the fix.`;
+  const pp = G.ppcod;
+  $('gkPp').innerHTML = pp.rows.map(r => `<tr><td>${r[0]}</td><td>${N(r[1])}</td><td>${N(r[2])}</td><td><b>${P(r[2] / r[1] * 100, 1)}</b></td><td>${rs(r[3])}</td><td>${rs(r[4])}</td></tr>`).join('');
+  $('gkPpTake').innerHTML = `RTO (RTO ÷ all orders): PPCOD ${P(pp.rto, 1)} (${pp.rtoN} of ${pp.n}) vs ${P(pp.rtoPre, 1)} for prepaid orders in the same regions and bands (${pp.rtoPreN}). All ${pp.pending} PPCOD orders still show "pending" in GoKwik and ${pp.noShip} have no shipment status — check the sync with ops.`;
+})();
+
 // ---------- NEXT ----------
 $('suggBox').innerHTML = [
   ['Stock vs run-rate', 'Days of stock left for the top 20 SKUs at sale pace.'],
-  ['Shopify connector', 'Reconnect so landing-page and city sessions extend past ' + fd(M.shopTo || M.through) + '.'],
+  ['Snapmint status sync', 'Some Snapmint payments stay "initiated" in GoKwik after the order is placed — ask GoKwik to fix the callback and pass decline reasons.'],
   ['Cancellations & returns by coupon', '7/14-day cancel and return rate for sale orders, by code.'],
   ['Delivery lag', 'Order → dispatch → delivery days, by state.'],
   ['CX load', 'Calls, chats and tickets per 100 orders, by reason.'],
